@@ -1,0 +1,8 @@
+{
+  "name": "barcelona-tracking-viewer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test ../tests/frontend/web/*.test.mjs"
+  }
+}

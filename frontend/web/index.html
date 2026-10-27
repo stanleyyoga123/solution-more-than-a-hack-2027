@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#141714" />
+    <meta
+      name="description"
+      content="Compare camera tracking and a synchronized top-down tactical view."
+    />
+    <title>Touchline — Tracking viewer</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/main.js"></script>
+  </head>
+  <body>
+    <main class="workspace">
+      <header class="app-header">
+        <a class="wordmark" href="/" aria-label="Touchline home">
+          <span class="brand-icon" aria-hidden="true"><span></span></span>
+          TOUCHLINE<span class="wordmark-detail"> / ANALYSIS</span>
+        </a>
+        <span class="recording-badge"><span class="live-dot"></span> TACTICAL RECORDING</span>
+      </header>
+
+      <section class="match-header" aria-labelledby="match-title">
+        <div>
+          <p class="eyebrow">TRACKING WORKSPACE <span>01</span></p>
+          <h1 id="match-title">Barcelona <span class="versus">vs</span> Athletic Club</h1>
+          <p class="intro">One moment. Two perspectives.</p>
+        </div>
+        <div class="session-meta">
+          <span class="session-label">SOURCE TIMELINE</span>
+          <strong id="source-time">00:00:00.000</strong>
+          <span id="source-details">Loading recording…</span>
+        </div>
+      </section>
+
+      <div class="view-toolbar">
+        <div class="view-title"><span class="comparison-icon" aria-hidden="true">◫</span> Compare views</div>
+        <div class="view-options">
+          <label class="toggle-label"><input id="show-labels" type="checkbox" checked /> Track IDs</label>
+          <label class="toggle-label">
+            <input id="show-overlay" type="checkbox" checked /> Camera overlay
+          </label>
+        </div>
+      </div>
+
+      <section class="comparison" aria-label="Synchronized tracking views">
+        <article class="view-card">
+          <header class="card-header">
+            <div><span class="view-number">01</span><h2>Camera view</h2></div>
+            <span class="coordinate-tag">VIDEO PIXELS</span>
+          </header>
+          <div class="visual-stage camera-stage">
+            <div class="camera-image">
+              <video
+                id="source-video"
+                preload="auto"
+                playsinline
+                muted
+                aria-label="Tactical match recording"
+              ></video>
+              <canvas
+                id="camera-overlay"
+                aria-label="Player positions projected onto the camera image"
+              ></canvas>
+            </div>
+            <span class="stage-label">TACTICAL / ORIGINAL PERSPECTIVE</span>
+          </div>
+          <footer class="card-footer">
+            <span>Projected tracking positions</span>
+            <strong id="camera-count">— players visible</strong>
+          </footer>
+        </article>
+
+        <article class="view-card">
+          <header class="card-header">
+            <div><span class="view-number">02</span><h2>Pitch view</h2></div>
+            <span class="coordinate-tag normalized-tag">NORMALIZED 2D</span>
+          </header>
+          <div class="visual-stage pitch-stage">
+            <canvas
+              id="pitch-map"
+              width="1200"
+              height="760"
+              aria-label="Top-down pitch with normalized player and ball positions"
+            ></canvas>
+            <span class="stage-label">BIRD’S-EYE / FULL PITCH</span>
+          </div>
+          <footer class="card-footer">
+            <span id="pitch-dimensions">105 × 68 m</span>
+            <strong id="pitch-count">— players tracked</strong>
+          </footer>
+        </article>
+      </section>
+
+      <div class="comparison-details">
+        <div id="team-legend" class="team-legend" aria-label="Team colours"></div>
+        <span
+          class="sync-status"
+          id="sync-status"
+          role="status"
+          aria-live="polite"
+        >Loading recording and tracking…</span>
+      </div>
+
+      <section class="transport" aria-label="Playback controls">
+        <div class="timeline-labels">
+          <span id="timeline-current">00:00:00</span>
+          <span id="timeline-end">—</span>
+        </div>
+        <input
+          id="timeline"
+          class="timeline"
+          type="range"
+          min="0"
+          max="1"
+          value="0"
+          step="1"
+          aria-label="Recording frame"
+          disabled
+        />
+        <div class="transport-row">
+          <div class="playback-controls">
+            <button
+              id="previous-frame"
+              class="icon-button"
+              title="Previous frame (left arrow)"
+              aria-label="Previous frame"
+              disabled
+            >⏮</button>
+            <button id="play-pause" class="play-button" aria-label="Play recording" disabled>
+              <span id="play-symbol" aria-hidden="true">▶</span>
+              <span id="play-text">Play</span>
+            </button>
+            <button
+              id="next-frame"
+              class="icon-button"
+              title="Next frame (right arrow)"
+              aria-label="Next frame"
+              disabled
+            >⏭</button>
+            <span class="control-divider"></span>
+            <label class="speed-label" for="playback-speed">Speed</label>
+            <select id="playback-speed" aria-label="Playback speed" disabled>
+              <option value="0.25">0.25×</option>
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+            </select>
+          </div>
+          <div class="jump-controls">
+            <button id="kickoff" class="quiet-button" disabled>
+              <span aria-hidden="true">↗</span> First kick-off
+            </button>
+            <label class="frame-label" for="frame-input">FRAME</label>
+            <input
+              id="frame-input"
+              type="number"
+              min="0"
+              max="1"
+              value="0"
+              step="1"
+              aria-label="Go to frame"
+              disabled
+            />
+            <span id="frame-total" class="frame-total">/ —</span>
+          </div>
+        </div>
+      </section>
+
+      <footer class="workspace-footer">
+        <p>
+          <span class="note-mark">i</span>
+          Numbers are tracking IDs, not verified shirt numbers.
+          Missing positions are omitted.
+        </p>
+        <p class="keyboard-hint">
+          <kbd>Space</kbd> play / pause <span>·</span> <kbd>←</kbd>
+          <kbd>→</kbd> one frame
+        </p>
+      </footer>
+      <noscript>This viewer requires JavaScript to synchronize video and tracking positions.</noscript>
+    </main>
+  </body>
+</html>

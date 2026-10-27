@@ -35,6 +35,9 @@ src/
 - Pipelines must not import, call, or automatically execute other pipelines. Shared code belongs in `src/utilities/`, with descriptive modules grouped by responsibility.
 - Keep helpers used by only one pipeline inside that pipeline. Do not create abstractions for hypothetical reuse.
 - Local production imports must stay inside `src/`; do not depend on root-level `utilities/`, `explorations/`, or `games.py`.
+- The local tracking viewer is the explicit exception: keep its server and browser
+  code in `frontend/`. It may reuse `src/utilities/` but must not run or import
+  pipeline steps. Keep browser rendering, playback, and data access modular.
 - Pass input paths explicitly and write generated artifacts under `output/` by default. Preserve the distinction between tactical and broadcast timelines.
 
 `pyproject.toml` declares dependencies and Python `>=3.12`; `.python-version`
@@ -53,6 +56,8 @@ Run commands from the repository root:
 - `python -m pytest tests/src/pipelines tests/src/utilities`: run the pipeline and utility checks.
 - `python -m black <paths>`: format the Python files being changed.
 - `python -m black --check <paths>`: verify formatting before finishing a change.
+- `python -m frontend`: serve the local side-by-side tracking viewer; see
+  `frontend/README.md` for inputs and controls.
 
 See `src/pipelines/README.md` for complete invocations. Black is the required
 Python formatter; its configuration lives in `pyproject.toml`. No linter is
