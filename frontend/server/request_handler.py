@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from frontend.server.file_response import send_file
+from frontend.server.quality_report_store import empty_quality_report
 from frontend.server.tracking_store import TrackingStore
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,12 +22,14 @@ class RequestHandler(BaseHTTPRequestHandler):
         video: Path,
         web_dir: Path,
         birdseye_video: Path | None = None,
+        quality_body: bytes | None = None,
         **kwargs,
     ):
         self._store = store
         self._metadata = metadata
         self._video = video
         self._birdseye_video = birdseye_video
+        self._quality_body = quality_body
         self._web_dir = web_dir.resolve()
         super().__init__(*args, **kwargs)
 
@@ -47,6 +50,12 @@ class RequestHandler(BaseHTTPRequestHandler):
         url = urlsplit(self.path)
         if url.path == "/api/metadata":
             self._send_json(self._metadata, send_body)
+            return
+        if url.path == "/api/quality":
+            if self._quality_body is None:
+                self._send_json(empty_quality_report(), send_body)
+            else:
+                self._send_json_body(self._quality_body, send_body)
             return
         if url.path == "/api/frames":
             try:
@@ -90,6 +99,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def _send_json(self, payload: dict, send_body: bool) -> None:
         body = json.dumps(payload, allow_nan=False, separators=(",", ":")).encode()
+        self._send_json_body(body, send_body)
+
+    def _send_json_body(self, body: bytes, send_body: bool) -> None:
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))

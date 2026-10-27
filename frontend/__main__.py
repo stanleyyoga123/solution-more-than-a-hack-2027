@@ -36,6 +36,16 @@ def main() -> None:
         help="Source start time used to render a trimmed bird's-eye clip",
     )
     parser.add_argument("--cache-dir", type=Path, default=Path("output/frontend"))
+    parser.add_argument(
+        "--trajectory-flags",
+        type=Path,
+        help="Step 07 CSV; defaults to output/tracking_trajectory_flags.csv when present",
+    )
+    parser.add_argument(
+        "--gap-continuity",
+        type=Path,
+        help="Step 08 CSV; defaults to output/tracking_gap_continuity.csv when present",
+    )
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     configure_console_logging()
@@ -44,6 +54,16 @@ def main() -> None:
         default_birdseye = Path("output/tactical_birdseye.mp4")
         if default_birdseye.is_file():
             birdseye_video = default_birdseye
+    trajectory_flags = args.trajectory_flags
+    if trajectory_flags is None:
+        default_flags = Path("output/tracking_trajectory_flags.csv")
+        if default_flags.is_file():
+            trajectory_flags = default_flags
+    gap_continuity = args.gap_continuity
+    if gap_continuity is None:
+        default_gaps = Path("output/tracking_gap_continuity.csv")
+        if default_gaps.is_file():
+            gap_continuity = default_gaps
     with create_server(
         args.video,
         args.pixels,
@@ -53,6 +73,8 @@ def main() -> None:
         args.port,
         birdseye_video=birdseye_video,
         birdseye_start_seconds=args.birdseye_start_seconds,
+        trajectory_flags=trajectory_flags,
+        gap_continuity=gap_continuity,
     ) as server:
         logging.getLogger(__name__).info(
             "Tracking viewer ready: http://127.0.0.1:%d", server.server_port

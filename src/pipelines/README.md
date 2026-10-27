@@ -3,6 +3,8 @@
 The first two steps independently export the same supplied ATD observations.
 The third renders a normalized CSV and its metadata as a top-down tactical video.
 The fourth warps the original footage into a top-down pitch view using homography.
+Steps 07 and 08 produce trajectory flags and same-slot gap-continuity assessments
+from the normalized tracking export.
 Each numbered package owns one pipeline; shared readers and export helpers live in
 `src/utilities/`. Production imports stay inside `src/`.
 
@@ -30,12 +32,16 @@ src/
 │   │   ├── metadata_reader.py
 │   │   ├── normalized_reader.py
 │   │   └── pitch_renderer.py
-│   └── 04_render_birdseye_tactical_video/
-│       ├── __init__.py
-│       ├── __main__.py
-│       ├── pipeline.py
-│       ├── birdseye_renderer.py
-│       └── frame_reader.py
+│   ├── 04_render_birdseye_tactical_video/
+│   │   ├── __init__.py
+│   │   ├── __main__.py
+│   │   ├── pipeline.py
+│   │   ├── birdseye_renderer.py
+│   │   └── frame_reader.py
+│   ├── 05_possession_baseline/
+│   ├── 06_score_submission/
+│   ├── 07_flag_impossible_trajectories/
+│   └── 08_assess_identity_continuity/
 └── utilities/
     ├── atd_reader.py
     ├── epts_metadata.py
@@ -129,7 +135,7 @@ semantics. Normalised coordinates retain their source orientation, without
 flipping team attacking directions. Valid calibration is not a guarantee of
 tracking accuracy or player visibility.
 
-Inputs and CSV rows are streamed with memory bounded by one frame. A full
+Steps 01–04 stream inputs with memory bounded by one frame. A full
 tactical export contains 199,319 frames × 47 entities = 9,367,993 rows per CSV;
 allow sufficient disk space. Each pipeline reads ATD separately to avoid losing
 normalised observations when calibration is unavailable.
@@ -274,11 +280,154 @@ video_path = render_birdseye(
 )
 ```
 
+## Flag suspicious trajectories
+
+Step 07 reads step 02's normalized CSV and metadata. It converts normalized
+positions into metres using the supplied pitch dimensions and derives motion
+using the metadata's FPS. It does not use `speed_raw` or homography.
+
+```bash
+python -m src.pipelines.07_flag_impossible_trajectories \
+  --tracking output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --player-speed-limit 12 \
+  --player-acceleration-limit 15 \
+  --ball-speed-limit 45 \
+  --output-dir output
+```
+
+The defaults screen player speeds above 12 m/s, player accelerations above
+15 m/s², and ball speeds above 45 m/s. These configurable thresholds are
+heuristics, not validated accuracy or confidence estimates. Ball acceleration is
+not screened because kicks and deflections can cause abrupt changes. Apparent
+ball motion also inherits the limitations of ground-plane coordinates.
+
+Speed is the Euclidean displacement between consecutive observed frames divided
+by elapsed seconds. Player acceleration is the magnitude of the difference
+between consecutive velocity vectors divided by elapsed seconds. Missing either
+coordinate resets the history; calculations never bridge null intervals.
+Equality with a threshold is not flagged. Off-pitch coordinates alone do not
+trigger flags.
+
+The pipeline writes `tracking_trajectory_flags.csv` and
+`tracking_trajectory_flags.metadata.json`. The CSV contains only flagged samples,
+one row per entity and ending frame, ordered by ending frame then entity ID:
+
+| Columns | Meaning |
+| --- | --- |
+| `entity_id`, `entity_type`, `team_id` | Original tracking-slot identifiers. |
+| `start_frame`, `end_frame` | Inclusive support interval for the triggered check(s). Speed uses two frames; acceleration uses three. |
+| `speed_mps`, `acceleration_mps2` | Derived motion values; unavailable acceleration is blank, including for the ball. |
+| `speed_flag`, `acceleration_flag` | Whether each value exceeds its configured threshold. |
+
+A sample triggering both checks has one combined row covering both checks'
+support. No flags produces a header-only CSV. Metadata records inputs, units,
+formulas, effective thresholds and counts by entity/check. Original tracking
+files are never modified.
+
+## Assess continuity across null positions
+
+Step 08 reads normalized tracking and the matching step 07 reports. It imports
+no code from step 07 and does not run it automatically. Supply reports from the
+same tracking export; input format and correspondence are assumed valid.
+
+```bash
+python -m src.pipelines.08_assess_identity_continuity \
+  --tracking output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --flags output/tracking_trajectory_flags.csv \
+  --flags-metadata output/tracking_trajectory_flags.metadata.json \
+  --max-gap-seconds 2 \
+  --context-seconds 0.2 \
+  --player-prediction-tolerance 2 \
+  --ball-prediction-tolerance 3 \
+  --output-dir output
+```
+
+Each maximal run with either position coordinate missing becomes one report row,
+including leading/trailing gaps and completely unobserved slots. Same-slot
+continuity is assessed for players; ball results describe motion continuity.
+Neither slot activity nor real-world identity is inferred from nulls alone.
+
+For a bounded gap, endpoint distance is measured in metres. Required average
+speed uses the actual time between the two observed endpoints, not just the
+missing-frame duration. Endpoint velocities use continuous observed context:
+`ceil(context_seconds × FPS)` intervals ending at the left endpoint and starting
+at the right endpoint. Forward/backward errors compare constant-velocity
+predictions across the entire endpoint interval with the opposite endpoint.
+
+Classification uses the following precedence:
+
+| Condition | Status | Reason |
+| --- | --- | --- |
+| Either endpoint is absent | `uncertain` | `unbounded_gap` |
+| Any step 07 support interval overlaps an endpoint or its velocity context | `uncertain` | `flagged_context` |
+| Required average speed exceeds the entity's step 07 speed limit | `implausible` | `excessive_required_speed` |
+| Missing-frame duration exceeds the maximum gap duration | `uncertain` | `long_gap` |
+| Continuous context is insufficient on either side | `uncertain` | `insufficient_context` |
+| Either prediction error exceeds the entity's tolerance | `uncertain` | `motion_disagreement` |
+| All checks pass | `plausible` | `motion_consistent` |
+
+Flag overlap includes interval boundaries. Default prediction tolerances are
+2 metres for players and 3 metres for the ball. A two-second gap limit at 25 FPS
+allows at most 50 missing frames; observed endpoints are 51 frame intervals
+apart for a gap of that length. The limit is conservative: the audited tactical
+player gaps are all longer than two seconds, so none qualify as plausible under
+the defaults. A motion-consistent gap is a candidate for subsequent review or
+imputation testing, not a verified identity or an instruction to fill it.
+
+Outputs are `tracking_gap_continuity.csv` and
+`tracking_gap_continuity.metadata.json`. CSV rows are ordered by gap start frame
+and entity ID:
+
+| Columns | Meaning |
+| --- | --- |
+| `entity_id`, `entity_type`, `team_id` | Original tracking-slot identifiers. |
+| `start_frame`, `end_frame` | Inclusive bounds of the missing run. |
+| `missing_frames`, `gap_seconds` | Run length and its duration at source FPS. |
+| `left_frame`, `right_frame` | Observed endpoint frames; blank when absent. |
+| `endpoint_distance_m`, `required_speed_mps` | Endpoint displacement and minimum required average speed. |
+| `forward_error_m`, `backward_error_m` | Constant-velocity prediction errors; blank without sufficient context. |
+| `status`, `reason` | Assessment and the first applicable reason above. |
+
+Metadata records source reports, effective settings and classification counts.
+Both pipelines stream tracking with bounded per-entity context and retain only
+compact diagnostic records as needed. Reports use the existing safe publication
+and progress logging conventions: no overwrites, no partial final pair on failure,
+stderr logs and stdout output paths. Positive finite configuration values are
+required. Neither pipeline fills positions, changes IDs or updates the frontend.
+
+For Python callers:
+
+```python
+flag_trajectories = import_module(
+    "src.pipelines.07_flag_impossible_trajectories"
+).run_pipeline
+assess_continuity = import_module(
+    "src.pipelines.08_assess_identity_continuity"
+).run_pipeline
+
+tracking = Path("output/tracking_normalized_2d.csv")
+metadata = Path("output/tracking_normalized_2d.metadata.json")
+flags, flags_metadata = flag_trajectories(tracking, metadata, Path("output"))
+gap_csv, gap_metadata = assess_continuity(
+    tracking, metadata, flags, flags_metadata, Path("output")
+)
+```
+
 Install the formatter and tests with `uv sync --group dev --extra test`.
 Format changed Python files with `python -m black <paths>` and verify them with
 `python -m black --check <paths>`. Black uses 88-character lines and targets
 Python 3.12. Split long strings and complicated expressions for readability even
 when the formatter does not do so automatically.
 
-Run the scoped
-checks with `.venv/bin/python -m pytest tests/src/pipelines tests/src/utilities`.
+Run the maintained pipeline and export/logging checks:
+
+```bash
+.venv/bin/python -m pytest tests/src/pipelines \
+  tests/src/utilities/test_pipeline_exports.py \
+  tests/src/utilities/test_pipeline_logging.py
+```
+
+The legacy `tests/src/utilities/test_utility.py` references a removed exploratory
+module and is excluded from these checks.

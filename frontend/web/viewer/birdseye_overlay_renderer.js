@@ -28,6 +28,7 @@ export class BirdseyeOverlayRenderer {
     this._context = canvas.getContext("2d");
     this._pitch = pitch;
     this._colours = colours;
+    this._highlightedEntity = null;
     canvas.width = footage === null ? 0 : footage.width;
     canvas.height = footage === null ? 0 : footage.height;
     this.hide();
@@ -36,6 +37,11 @@ export class BirdseyeOverlayRenderer {
   hide() {
     this._canvas.hidden = true;
     this._context.clearRect(0, 0, this._canvas.width, this._canvas.height);
+  }
+
+  /** @param {string|null} entityId */
+  setHighlightedEntity(entityId) {
+    this._highlightedEntity = entityId;
   }
 
   /**
@@ -50,7 +56,10 @@ export class BirdseyeOverlayRenderer {
     this._context.clip();
     for (const entity of positions) {
       const point = birdseyePosition(entity.pos_x, entity.pos_y, this._pitch);
-      drawEntity(this._context, entity, point.x, point.y, this._colours, labels, 9);
+      drawEntity(
+        this._context, entity, point.x, point.y, this._colours, labels, 9,
+        entity.entity_id === this._highlightedEntity,
+      );
     }
     this._context.restore();
     this._canvas.hidden = false;

@@ -8,6 +8,9 @@ import { BirdseyePlayback } from "./viewer/birdseye_playback.js";
 import { BirdseyeOverlay } from "./viewer/birdseye_overlay.js";
 import { BirdseyeOverlayRenderer } from "./viewer/birdseye_overlay_renderer.js";
 import { teamColours } from "./viewer/entity_markers.js";
+import { QualityReviewController } from "./viewer/quality_review_controller.js";
+import { QualityReviewView } from "./viewer/quality_review_view.js";
+import { QualityTimeline } from "./viewer/quality_timeline.js";
 
 async function startViewer() {
   const view = new ViewerView(document);
@@ -61,10 +64,19 @@ async function startViewer() {
       overlay: document.querySelector("#show-overlay"),
       keyboardTarget: document,
     };
+    const qualityReview = new QualityReviewController(
+      client,
+      new QualityReviewView(document.querySelector("#quality-review"), metadata.fps),
+      new QualityTimeline(document.querySelector("#quality-timeline"), metadata.frame_count),
+      (frame) => controller.seek(frame),
+      (entityId) => controller.highlightEntity(entityId),
+    );
     const controller = new ViewerController({
       video, controls, view, camera, pitch, birdseye, birdseyeOverlay, metadata, cache,
+      qualityReview,
     });
     controller.start();
+    qualityReview.start();
   } catch (error) {
     view.showStatus(`${error.message} Check the local server and reload this page.`, "error");
   }

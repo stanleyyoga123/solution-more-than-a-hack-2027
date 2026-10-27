@@ -32,6 +32,12 @@ export class BirdseyeOverlay {
     this._refresh();
   }
 
+  /** @param {string|null} entityId */
+  setHighlightedEntity(entityId) {
+    this._renderer.setHighlightedEntity(entityId);
+    this._refresh();
+  }
+
   async _refresh() {
     const generation = ++this._generation;
     this._renderer.hide();

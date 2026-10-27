@@ -14,6 +14,15 @@ export class TrackingClient {
     return response.json();
   }
 
+  /** @returns {Promise<import('./quality_types.js').QualityPayload>} */
+  async quality() {
+    const response = await this._fetch("/api/quality");
+    if (!response.ok) {
+      throw new Error(`Cannot load quality reports (HTTP ${response.status}).`);
+    }
+    return response.json();
+  }
+
   /**
    * @param {number} start
    * @param {number} count

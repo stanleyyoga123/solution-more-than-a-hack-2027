@@ -11,7 +11,8 @@ the public 5-minute ground truth live in the
 The repository has two parts:
 
 - **Numbered pipelines** that turn the supplied tracking data into exports,
-  videos and possession submissions, and score those submissions.
+  videos and possession submissions, score those submissions, and assess
+  tracking quality.
 - **A local viewer** that plays the camera footage, a top-down pitch map and a
   bird's-eye warp of the footage side by side on one timeline.
 
@@ -61,6 +62,8 @@ overwritten, so use a fresh `--output-dir` for a rerun.
 | `04_render_birdseye_tactical_video` | Original video, homography CSV, XML | `tactical_birdseye.mp4`, warped footage |
 | `05_possession_baseline` | ATD text and XML | `possession_baseline.csv` submission and metadata JSON |
 | `06_score_submission` | Any submission CSV and a ground-truth CSV | `<submission>.scores.json` with the official metrics |
+| `07_flag_impossible_trajectories` | Normalized CSV and its metadata JSON | `tracking_trajectory_flags.csv` and metadata JSON |
+| `08_assess_identity_continuity` | Normalized CSV, metadata, and step 07 reports | `tracking_gap_continuity.csv` and metadata JSON |
 
 The [pipeline guide](src/pipelines/README.md) has the full arguments, CSV
 schema, coordinate conventions and Python APIs.
@@ -91,6 +94,38 @@ check a pipeline, not to tune one. Distances use the metadata's 105 × 68 m
 pitch, not the organisers' measured 105.3 × 68 m, so a few frames differ from
 their `baseline_smooth50.csv`; the public-window scores are the same.
 
+### Tracking quality and gaps
+
+Step 07 flags suspicious player speed and acceleration, and suspicious ball
+speed. Step 08 assesses gaps within each tracking slot using endpoint motion and
+step 07's flags. Run these after step 02:
+
+```bash
+python -m src.pipelines.07_flag_impossible_trajectories \
+  --tracking output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --output-dir output
+
+python -m src.pipelines.08_assess_identity_continuity \
+  --tracking output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --flags output/tracking_trajectory_flags.csv \
+  --flags-metadata output/tracking_trajectory_flags.metadata.json \
+  --output-dir output
+```
+
+These steps write separate diagnostic reports; they preserve positions, nulls
+and entity IDs. A `plausible` gap means its motion is consistent with continuity,
+not that a player's identity is verified. Longer gaps remain uncertain by default
+(maximum two seconds), and no positions are filled. See the
+[quality pipeline details](src/pipelines/README.md#flag-suspicious-trajectories)
+for thresholds, report columns and interpretation.
+
+Restart the frontend after generating the reports to load them into its tracking
+quality panel. Default report paths are detected independently; use
+`--trajectory-flags` and `--gap-continuity` for custom locations. See the
+[frontend review controls](frontend/README.md#review-tracking-quality).
+
 ### Prepare the viewer
 
 The viewer needs the pixel and normalized exports. The bird's-eye footage is
@@ -117,7 +152,9 @@ python -m src.pipelines.04_render_birdseye_tactical_video \
 
 Each full tactical CSV is several hundred megabytes. The bird's-eye video uses
 12 pixels per metre (1260 × 816 for a 105 × 68 m pitch); areas outside the
-camera image and frames without valid calibration are black.
+camera image and frames without valid calibration are black. Renders start
+at source time zero by default. The warp assumes a flat pitch, so bodies and
+airborne objects can appear stretched; the rendered video has no audio.
 
 Pre-generated exports and videos are in this
 [Google Drive folder](https://drive.google.com/drive/folders/1BuxSs5RT_My3yr1fbt8TtAzbFK5tiay5).
@@ -138,7 +175,12 @@ pitch views work without it.
 Controls cover play and pause, speed, seeking, frame-number entry, single-frame
 steps (arrow keys), a jump to the first kickoff, and separate label and overlay
 toggles for each view. The [frontend guide](frontend/README.md) covers custom
-paths and trimmed bird's-eye clips.
+paths and trimmed bird's-eye clips. The kickoff shortcut is approximately
+frame 11186 (447.44 seconds). Stop the server with `Ctrl+C`.
+
+When step 07/08 reports are available, the tracking-quality panel lets you
+filter by entity or gap status, navigate motion episodes and gap boundaries,
+and highlight the selected entity across the views.
 
 ## Data conventions
 

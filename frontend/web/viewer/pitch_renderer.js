@@ -13,6 +13,7 @@ export class PitchRenderer {
     this._context = canvas.getContext("2d");
     this._dimensions = dimensions;
     this._colours = colours;
+    this._highlightedEntity = null;
     this._geometry = pitchGeometry(
       canvas.width,
       canvas.height,
@@ -29,6 +30,11 @@ export class PitchRenderer {
     this._context.drawImage(this._background, 0, 0);
   }
 
+  /** @param {string|null} entityId */
+  setHighlightedEntity(entityId) {
+    this._highlightedEntity = entityId;
+  }
+
   /**
    * @param {import('./tracking_types.js').Observation[]} positions
    * @param {boolean} labels
@@ -41,7 +47,10 @@ export class PitchRenderer {
     this._context.clip();
     for (const entity of positions) {
       const point = pitchPosition(entity.pos_x, entity.pos_y, this._geometry);
-      drawEntity(this._context, entity, point.x, point.y, this._colours, labels, 10);
+      drawEntity(
+        this._context, entity, point.x, point.y, this._colours, labels, 10,
+        entity.entity_id === this._highlightedEntity,
+      );
     }
     this._context.restore();
   }
