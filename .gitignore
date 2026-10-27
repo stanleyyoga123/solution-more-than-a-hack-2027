@@ -32,7 +32,8 @@ htmlcov/
 venv/
 
 # Data
-data/
+/data/*
+!/data/.gitkeep
 
 # Generated tracking exports
 /output/*
