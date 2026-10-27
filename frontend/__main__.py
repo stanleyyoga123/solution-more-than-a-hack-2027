@@ -46,6 +46,11 @@ def main() -> None:
         type=Path,
         help="Step 08 CSV; defaults to output/tracking_gap_continuity.csv when present",
     )
+    parser.add_argument(
+        "--predictions",
+        type=Path,
+        help="Submission-format CSV; defaults to output/prediction.csv when present",
+    )
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     configure_console_logging()
@@ -64,6 +69,11 @@ def main() -> None:
         default_gaps = Path("output/tracking_gap_continuity.csv")
         if default_gaps.is_file():
             gap_continuity = default_gaps
+    predictions = args.predictions
+    if predictions is None:
+        default_predictions = Path("output/prediction.csv")
+        if default_predictions.is_file():
+            predictions = default_predictions
     with create_server(
         args.video,
         args.pixels,
@@ -75,6 +85,7 @@ def main() -> None:
         birdseye_start_seconds=args.birdseye_start_seconds,
         trajectory_flags=trajectory_flags,
         gap_continuity=gap_continuity,
+        predictions=predictions,
     ) as server:
         logging.getLogger(__name__).info(
             "Tracking viewer ready: http://127.0.0.1:%d", server.server_port

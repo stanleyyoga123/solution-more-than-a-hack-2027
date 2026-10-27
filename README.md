@@ -195,6 +195,12 @@ indexes the CSVs under `output/frontend/`, and later launches reuse the index.
 The viewer loads `output/tactical_birdseye.mp4` when present; the camera and
 pitch views work without it.
 
+The viewer also loads `output/prediction.csv` when present. Any submission-format
+`frame,label` CSV can be selected with `python -m frontend --predictions <path>`.
+A possession badge on the camera video and a colored prediction timeline make
+it possible to inspect labels and jump between changes. See the
+[prediction viewer guide](frontend/README.md#review-possession-predictions).
+
 Controls cover play and pause, speed, seeking, frame-number entry, single-frame
 steps (arrow keys), a jump to the first kickoff, and separate label and overlay
 toggles for each view. The [frontend guide](frontend/README.md) covers custom

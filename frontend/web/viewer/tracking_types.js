@@ -56,5 +56,6 @@
  * @property {import('./birdseye_overlay.js').BirdseyeOverlay} birdseyeOverlay
  * @property {RecordingMetadata} metadata
  * @property {import('./quality_review_controller.js').QualityReviewController} qualityReview
+ * @property {import('./prediction_controller.js').PredictionController} predictions
  */
 export {};

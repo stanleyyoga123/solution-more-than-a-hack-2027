@@ -5,7 +5,7 @@ export class ViewerController {
   /** @param {import('./tracking_types.js').ViewerDependencies} dependencies */
   constructor({
     video, controls, view, cache, camera, pitch, birdseye, birdseyeOverlay, metadata,
-    qualityReview,
+    qualityReview, predictions,
   }) {
     this._video = video;
     this._controls = controls;
@@ -19,6 +19,7 @@ export class ViewerController {
     this._birdseyeOverlay.setVisible(controls.birdseyeOverlay.checked);
     this._metadata = metadata;
     this._qualityReview = qualityReview;
+    this._predictions = predictions;
     this._currentFrame = -1;
     this._cameraLabels = controls.cameraLabels.checked;
     this._pitchLabels = controls.pitchLabels.checked;
@@ -39,10 +40,12 @@ export class ViewerController {
     this._video.addEventListener("loadedmetadata", () => {
       this._view.enableControls();
       this._qualityReview.setReady(true);
+      this._predictions.setReady(true);
       this.seek(this._metadata.default_frame);
     }, { once: true });
     this._video.addEventListener("seeking", () => {
       this._currentFrame = -1;
+      this._predictions.suspend();
       this._clearTracking();
       this._birdseye.suspend("Seeking source frame…");
       this._view.showStatus("Seeking source frame…", "loading");
@@ -68,6 +71,7 @@ export class ViewerController {
     });
     this._video.addEventListener("error", () => {
       this._qualityReview.setReady(false);
+      this._predictions.setReady(false);
       this._clearTracking();
       this._birdseye.suspend("Source video unavailable.");
       this._view.showStatus(
@@ -84,6 +88,7 @@ export class ViewerController {
     const target = Math.max(0, Math.min(this._metadata.frame_count - 1, frame));
     this._video.pause();
     this._currentFrame = -1;
+    this._predictions.suspend();
     this._clearTracking();
     this._birdseye.suspend("Seeking source frame…");
     this._controls.frame.value = String(target);
@@ -134,6 +139,7 @@ export class ViewerController {
     this._syncBirdseye(frame);
     this._view.showFrame(frame, this._metadata.fps);
     this._qualityReview.showFrame(frame);
+    this._predictions.showFrame(frame);
     const cached = this._cache.peek(frame);
     if (cached) {
       this._renderTracking(cached);

@@ -23,6 +23,15 @@ export class TrackingClient {
     return response.json();
   }
 
+  /** @returns {Promise<import('./prediction_types.js').PredictionPayload>} */
+  async predictions() {
+    const response = await this._fetch("/api/predictions");
+    if (!response.ok) {
+      throw new Error(`Cannot load predictions (HTTP ${response.status}).`);
+    }
+    return response.json();
+  }
+
   /**
    * @param {number} start
    * @param {number} count

@@ -25,6 +25,7 @@ The defaults use:
 - `output/tactical_birdseye.mp4`, when present
 - `output/tracking_trajectory_flags.csv`, when present
 - `output/tracking_gap_continuity.csv`, when present
+- `output/prediction.csv`, when present
 
 Generate the two CSVs with pipelines 01 and 02 before starting the viewer.
 The viewer does not run pipelines or require the video from pipeline 03.
@@ -89,6 +90,45 @@ offsets. It clears during seeking, unavailable footage, or tracking loads, so
 old positions are not left on a new frame. Coordinates use pipeline 04's fixed
 12 pixels per metre and preserve any padding for even video dimensions. The
 video file itself is unchanged; overlays are drawn only in the browser.
+
+## Review possession predictions
+
+Place a submission-format CSV at `output/prediction.csv`, then start the viewer
+normally. To inspect a specific experiment without copying its output:
+
+```bash
+python -m frontend \
+  --predictions playground/artifacts/refinement_002/r06_occlusion_bridge/possession.csv
+```
+
+The input uses the same two columns as a submission:
+
+```csv
+frame,label
+0,H
+1,H
+2,D
+3,A
+4,X
+```
+
+Frames are zero-based **source-video frames**, not seconds or frames counted from
+kickoff. Use predictions from the same recording as the displayed video. Labels
+mean home possession (`H`), away possession (`A`), dead ball (`D`), or no answer
+(`X`). Missing rows remain unavailable; they are not filled or treated as `D`.
+
+The **Possession prediction** panel shows the loaded filename, current label,
+and segment bounds. Its colored timeline follows the shared video clock; click
+it to seek or use previous/next change to inspect transitions. A separate toggle
+shows or hides the prediction badge on the camera footage independently of player
+labels and tracking overlays. The badge is drawn in the browser; it does not
+modify the source video or prediction CSV.
+
+Prediction loading is independent of tracking positions. If the optional default
+file is absent, the rest of the viewer still works. An explicitly supplied missing
+file is a startup error. Predictions are loaded once at startup and sent as
+compact contiguous intervals; restart the server and reload the page after
+replacing the CSV. These are model predictions for inspection, not verified labels.
 
 ## Review tracking quality
 

@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from frontend.server.file_response import send_file
+from frontend.server.prediction_store import empty_predictions
 from frontend.server.quality_report_store import empty_quality_report
 from frontend.server.tracking_store import TrackingStore
 
@@ -23,6 +24,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         web_dir: Path,
         birdseye_video: Path | None = None,
         quality_body: bytes | None = None,
+        prediction_body: bytes | None = None,
         **kwargs,
     ):
         self._store = store
@@ -30,6 +32,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self._video = video
         self._birdseye_video = birdseye_video
         self._quality_body = quality_body
+        self._prediction_body = prediction_body
         self._web_dir = web_dir.resolve()
         super().__init__(*args, **kwargs)
 
@@ -56,6 +59,12 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_json(empty_quality_report(), send_body)
             else:
                 self._send_json_body(self._quality_body, send_body)
+            return
+        if url.path == "/api/predictions":
+            if self._prediction_body is None:
+                self._send_json(empty_predictions(), send_body)
+            else:
+                self._send_json_body(self._prediction_body, send_body)
             return
         if url.path == "/api/frames":
             try:

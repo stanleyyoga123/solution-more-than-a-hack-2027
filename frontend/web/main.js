@@ -11,6 +11,9 @@ import { teamColours } from "./viewer/entity_markers.js";
 import { QualityReviewController } from "./viewer/quality_review_controller.js";
 import { QualityReviewView } from "./viewer/quality_review_view.js";
 import { QualityTimeline } from "./viewer/quality_timeline.js";
+import { PredictionController } from "./viewer/prediction_controller.js";
+import { PredictionView } from "./viewer/prediction_view.js";
+import { PredictionTimeline } from "./viewer/prediction_timeline.js";
 
 async function startViewer() {
   const view = new ViewerView(document);
@@ -71,12 +74,25 @@ async function startViewer() {
       (frame) => controller.seek(frame),
       (entityId) => controller.highlightEntity(entityId),
     );
+    const predictions = new PredictionController(
+      client,
+      new PredictionView(
+        document.querySelector("#prediction-review"),
+        document.querySelector("#camera-prediction"),
+        metadata,
+      ),
+      new PredictionTimeline(
+        document.querySelector("#prediction-timeline"), metadata.frame_count,
+      ),
+      (frame) => controller.seek(frame),
+    );
     const controller = new ViewerController({
       video, controls, view, camera, pitch, birdseye, birdseyeOverlay, metadata, cache,
-      qualityReview,
+      qualityReview, predictions,
     });
     controller.start();
     qualityReview.start();
+    predictions.start();
   } catch (error) {
     view.showStatus(`${error.message} Check the local server and reload this page.`, "error");
   }

@@ -75,6 +75,7 @@
                 id="camera-overlay"
                 aria-label="Player positions projected onto the camera image"
               ></canvas>
+              <span id="camera-prediction" class="prediction-overlay" hidden></span>
             </div>
             <span class="stage-label">TACTICAL / ORIGINAL PERSPECTIVE</span>
           </div>
@@ -206,6 +207,41 @@
             />
             <span id="frame-total" class="frame-total">/ —</span>
           </div>
+        </div>
+      </section>
+
+      <section id="prediction-review" class="prediction-review" aria-labelledby="prediction-title">
+        <header class="prediction-header">
+          <div>
+            <p class="eyebrow">MODEL OUTPUT</p>
+            <h2 id="prediction-title">Possession prediction</h2>
+          </div>
+          <label class="toggle-label">
+            <input id="show-prediction-overlay" type="checkbox" checked disabled />
+            Show prediction on video
+          </label>
+        </header>
+        <p id="prediction-status" class="prediction-status" role="status">Loading predictions…</p>
+        <div class="prediction-current-row">
+          <div>
+            <strong id="prediction-current" class="prediction-current">Waiting for a video frame…</strong>
+            <p id="prediction-interval" class="prediction-interval"></p>
+          </div>
+          <nav class="prediction-navigation" aria-label="Prediction interval navigation">
+            <button id="prediction-previous" class="quality-button" disabled>← Previous change</button>
+            <button id="prediction-next" class="quality-button" disabled>Next change →</button>
+          </nav>
+        </div>
+        <canvas id="prediction-timeline" width="1400" height="40"
+          aria-label="Predicted possession intervals. Click to seek, or use the previous and next change buttons."
+        ></canvas>
+        <div class="prediction-legend" aria-label="Prediction colours">
+          <span><i class="prediction-home"></i><span id="prediction-home-name">Home (H)</span></span>
+          <span><i class="prediction-away"></i><span id="prediction-away-name">Away (A)</span></span>
+          <span><i class="prediction-dead"></i>Dead ball (D)</span>
+          <span><i class="prediction-no-answer"></i>No answer (X)</span>
+          <span><i class="prediction-missing"></i>No CSV row</span>
+          <span class="prediction-playhead-note">White line: displayed video frame</span>
         </div>
       </section>
 
