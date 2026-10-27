@@ -136,10 +136,40 @@ They do not import or execute each other; shared code lives in `src/utilities/`.
 | `02_normalize_2d` | ATD text and XML | `tracking_normalized_2d.csv` and metadata JSON |
 | `03_render_2d_tactical_video` | Normalized CSV and its metadata JSON | `tactical_2d_tracking.mp4` — animated tracking map |
 | `04_render_birdseye_tactical_video` | Original video, homography CSV, XML | `tactical_birdseye.mp4` — warped footage |
+| `05_possession_baseline` | ATD text and XML | `possession_baseline.csv` submission and metadata JSON |
+| `06_score_submission` | Any submission CSV and a ground-truth CSV | `<submission>.scores.json` — official metrics |
 
 Step 03 consumes step 02's exported files. Step 04 works directly from the
 original recording assets and needs no previous pipeline output. The frontend
 draws its pitch map directly from tracking data, so step 03 is optional.
+
+### Possession submissions
+
+Step 05 writes the organisers' reference baseline: each frame goes to the team
+of the tracked player nearest the ball, `D` where the ball is missing, then a
+centred majority vote over ±`--window` frames (default 50). Step 06 checks any
+`frame,label` file against the competition format and scores it with
+`src/utilities/possession_metrics.py`, an unchanged copy of the official scorer.
+The public 5-minute ground truth is
+`evaluation/gt/BAR-ATH_possession_gt_public.csv` in the
+[organisers' repository](https://github.com/metrica-sports/more-than-a-hack-2027).
+
+```bash
+python -m src.pipelines.05_possession_baseline \
+  --tracking data/tactical/BAR-ATH_tactical_atd.txt \
+  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
+  --output-dir output
+
+python -m src.pipelines.06_score_submission \
+  --submission output/possession_baseline.csv \
+  --ground-truth path/to/BAR-ATH_possession_gt_public.csv \
+  --output-dir output
+```
+
+Distances use the metadata's 105 × 68 m pitch, not the organisers' measured
+105.3 × 68 m, so a few frames differ from their `baseline_smooth50.csv`; the
+public-window scores are the same. That window has only 17 possessions: use it
+to check a pipeline, not to tune one.
 
 To export the first ten seconds as a tracking-map video:
 
