@@ -2,8 +2,8 @@
 
 The first two steps independently export the same supplied ATD observations.
 The third renders a normalized CSV and its metadata as a top-down tactical video.
-Each
-numbered package owns one pipeline; shared readers and export helpers live in
+The fourth warps the original footage into a top-down pitch view using homography.
+Each numbered package owns one pipeline; shared readers and export helpers live in
 `src/utilities/`. Production imports stay inside `src/`.
 
 ```text
@@ -12,24 +12,31 @@ src/
 │   ├── 01_populate_pixels/
 │   │   ├── __init__.py
 │   │   ├── __main__.py
-│   │   ├── pipeline.py
-│   │   └── homography_reader.py
+│   │   └── pipeline.py
 │   ├── 02_normalize_2d/
 │   │   ├── __init__.py
 │   │   ├── __main__.py
 │   │   └── pipeline.py
-│   └── 03_render_2d_tactical_video/
+│   ├── 03_render_2d_tactical_video/
+│   │   ├── __init__.py
+│   │   ├── __main__.py
+│   │   ├── pipeline.py
+│   │   ├── metadata_reader.py
+│   │   ├── normalized_reader.py
+│   │   └── pitch_renderer.py
+│   └── 04_render_birdseye_tactical_video/
 │       ├── __init__.py
 │       ├── __main__.py
 │       ├── pipeline.py
-│       ├── metadata_reader.py
-│       ├── normalized_reader.py
-│       ├── pitch_renderer.py
-│       └── video_encoder.py
+│       ├── birdseye_renderer.py
+│       └── frame_reader.py
 └── utilities/
     ├── atd_reader.py
     ├── epts_metadata.py
-    └── export_files.py
+    ├── export_files.py
+    ├── homography_reader.py
+    ├── video_encoder.py
+    └── video_timing.py
 ```
 
 Run from the repository root with the project's Python environment:
@@ -53,6 +60,7 @@ independent. There is no `recording_id` column or implicit match selection.
 Run the commands one by one: pipelines do not call or execute other pipelines.
 The first two read the original ATD independently. Step 03 takes the normalized
 artifacts produced by step 02, so run step 02 before invoking step 03.
+Step 04 reads original recording assets and does not require steps 01–03.
 
 CLI logs are timestamped and sent to stderr, while stdout contains only the
 published output paths. Logs describe the input files, loading and writing
@@ -201,6 +209,65 @@ video_path = render_video(
     metadata=Path("output/tracking_normalized_2d.metadata.json"),
     output_dir=Path("output"),
     start_seconds=600,
+    duration_seconds=10,
+)
+```
+
+## Warp original footage into a bird's-eye video
+
+Render ten seconds around the approximate first kickoff:
+
+```bash
+.venv/bin/python -m src.pipelines.04_render_birdseye_tactical_video \
+  --video data/tactical/BAR-ATH_tactical-002.mp4 \
+  --homography data/tactical/BAR-ATH_tactical_homography.csv \
+  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
+  --output-dir output \
+  --start-seconds 447.44 \
+  --duration-seconds 10
+```
+
+Step 04 writes `output/tactical_birdseye.mp4`. Its metadata input is the original
+EPTS XML, supplying physical pitch dimensions. Frame rate and frame count come
+from the original video. Use the matching tactical video and homography;
+broadcast assets have a separate timeline. No tracking CSV or previous pipeline
+output is required.
+
+The silent H.264 MP4 uses the source frame rate and 12 pixels per metre. A
+105 × 68 m pitch produces a 1260 × 816 image. Canvas dimensions are padded to
+even values when necessary for `yuv420p`, retaining a uniform physical scale.
+The video covers the full pitch rectangle, with normalized x increasing to the
+right and y downward. It contains warped footage, without tracking dots or
+labels. FFmpeg requirements and encoding settings match step 03.
+
+The supplied homography maps normalized pitch positions into source-image
+pixels. For each output pixel, step 04 maps its pitch position back into the
+source image and samples with OpenCV's inverse-map perspective warp and linear
+interpolation. Areas outside the source image are black. A frame with
+`valid=0` calibration becomes a black frame; it is retained in the timeline.
+There is no filling from neighbouring frames, interpolation of calibration,
+smoothing, or reconstruction of unseen areas. Players and airborne objects can
+appear stretched because the transform assumes a flat ground plane.
+
+Time-range selection matches step 03: zero-based source frames, floor start,
+ceil duration, and clipping at the recording end. Omit `--duration-seconds` to
+render through the end; omit both time arguments to render the entire recording.
+The output clip starts at time zero while representing the selected source
+interval. Input decoding and rendering are streamed. Logs report loading,
+selected frames, output geometry, progress, unavailable calibration count, and
+completion. Existing outputs are refused, and failures leave no partial final
+video. Use a fresh `--output-dir` for another render.
+
+```python
+render_birdseye = import_module(
+    "src.pipelines.04_render_birdseye_tactical_video"
+).run_pipeline
+video_path = render_birdseye(
+    video=Path("data/tactical/BAR-ATH_tactical-002.mp4"),
+    homography=Path("data/tactical/BAR-ATH_tactical_homography.csv"),
+    metadata=Path("data/tactical/BAR-ATH_tactical_atd.xml"),
+    output_dir=Path("output"),
+    start_seconds=447.44,
     duration_seconds=10,
 )
 ```

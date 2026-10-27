@@ -7,8 +7,8 @@ import subprocess
 import tempfile
 from typing import BinaryIO
 
-from .normalized_reader import Observation
-from .pitch_renderer import HEIGHT, WIDTH, PitchRenderer
+import numpy as np
+from numpy.typing import NDArray
 
 
 def _encoder_error(error_log: BinaryIO) -> str:
@@ -18,11 +18,12 @@ def _encoder_error(error_log: BinaryIO) -> str:
 
 
 def encode_video(
-    frames: Iterable[tuple[int, list[Observation]]],
-    renderer: PitchRenderer,
+    frames: Iterable[NDArray[np.uint8]],
     fps: float,
     output: Path,
     ffmpeg: str,
+    width: int,
+    height: int,
 ) -> int:
     """Return frames written after encoder success; always close and reap the process."""
     command = [
@@ -35,7 +36,7 @@ def encode_video(
         "-pixel_format",
         "bgr24",
         "-video_size",
-        f"{WIDTH}x{HEIGHT}",
+        f"{width}x{height}",
         "-framerate",
         str(fps),
         "-i",
@@ -62,8 +63,7 @@ def encode_video(
             stderr=error_log,
         )
         try:
-            for frame, observations in frames:
-                image = renderer.render(frame, observations)
+            for image in frames:
                 process.stdin.write(image.tobytes())
                 count += 1
             process.stdin.close()

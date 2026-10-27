@@ -18,8 +18,7 @@ from src.utilities.export_files import (
     write_metadata,
 )
 from src.utilities.pipeline_logging import frame_progress
-
-from .homography_reader import read_homographies
+from src.utilities.homography_reader import read_homographies
 
 LOGGER = logging.getLogger(__name__)
 

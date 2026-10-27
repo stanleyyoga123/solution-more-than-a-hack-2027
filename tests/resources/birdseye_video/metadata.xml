@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<main>
+  <Metadata>
+    <GlobalConfig><FrameRate>4</FrameRate></GlobalConfig>
+    <Sessions>
+      <Session id="synthetic"><FieldSize><Width>10</Width><Height>6</Height></FieldSize></Session>
+    </Sessions>
+    <Teams><Team id="home"><Name>Home</Name></Team></Teams>
+    <Players><Player id="7" teamId="home"><Name>Track 7</Name></Player></Players>
+    <Devices><Device id="tracking"><Sensors><Sensor id="position"><Channels>
+      <Channel id="s"><Name>speed</Name><Unit>kph</Unit></Channel>
+    </Channels></Sensor></Sensors></Device></Devices>
+    <PlayerChannels>
+      <PlayerChannel channelId="x" id="player7_x" playerId="7"/>
+      <PlayerChannel channelId="y" id="player7_y" playerId="7"/>
+      <PlayerChannel channelId="s" id="player7_s" playerId="7"/>
+    </PlayerChannels>
+  </Metadata>
+  <DataFormatSpecifications>
+    <DataFormatSpecification startFrame="1" endFrame="4" separator=":">
+      <StringRegister name="frameCount"/>
+      <SplitRegister separator=";">
+        <SplitRegister separator=",">
+          <PlayerChannelRef playerChannelId="player7_x"/>
+          <PlayerChannelRef playerChannelId="player7_y"/>
+          <PlayerChannelRef playerChannelId="player7_s"/>
+        </SplitRegister>
+      </SplitRegister>
+    </DataFormatSpecification>
+  </DataFormatSpecifications>
+</main>

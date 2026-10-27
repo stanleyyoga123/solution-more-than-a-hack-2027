@@ -21,6 +21,10 @@ src/
 │   │   ├── __init__.py
 │   │   ├── __main__.py
 │   │   └── pipeline.py
+│   ├── 04_render_birdseye_tactical_video/
+│   │   ├── __init__.py
+│   │   ├── __main__.py
+│   │   └── pipeline.py
 │   └── ...
 └── utilities/
     ├── atd_reader.py
@@ -53,6 +57,7 @@ Run commands from the repository root:
 - `python -m src.pipelines.01_populate_pixels --help`: inspect the pixel-export arguments.
 - `python -m src.pipelines.02_normalize_2d --help`: inspect the normalized-export arguments.
 - `python -m src.pipelines.03_render_2d_tactical_video --help`: inspect the minimap-video arguments; requires FFmpeg with `libx264` on PATH.
+- `python -m src.pipelines.04_render_birdseye_tactical_video --help`: inspect the original-footage bird's-eye warp arguments; also requires FFmpeg with `libx264`.
 - `python -m pytest tests/src/pipelines tests/src/utilities`: run the pipeline and utility checks.
 - `python -m black <paths>`: format the Python files being changed.
 - `python -m black --check <paths>`: verify formatting before finishing a change.
