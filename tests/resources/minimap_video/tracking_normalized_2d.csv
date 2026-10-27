@@ -1,0 +1,13 @@
+frame,entity_id,entity_type,team_id,pos_x,pos_y,speed_raw,position_valid
+0,player_7,player,home,0.25,0.25,2,True
+0,player_42,player,away,0.75,0.75,3,True
+0,ball,ball,,0.5,0.5,4,True
+1,player_7,player,home,0.75,0.25,,True
+1,player_42,player,away,,,5,False
+1,ball,ball,,,,,False
+2,player_7,player,home,1.03,0.5,7,True
+2,player_42,player,away,0.2,0.8,8,True
+2,ball,ball,,0.5,0.8,,True
+3,player_7,player,home,,,,False
+3,player_42,player,away,,,,False
+3,ball,ball,,,,,False

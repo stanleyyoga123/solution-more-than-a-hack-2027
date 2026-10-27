@@ -1,0 +1,14 @@
+{
+  "fps": 4,
+  "pitch_dimensions": {"length": 100, "width": 60, "unit": "metres"},
+  "coordinate_space": "normalized_pitch_2d",
+  "position_unit": "pitch_fraction",
+  "orientation": {"x": "rightwards", "y": "downwards"},
+  "speed_unit": "kph",
+  "teams": {"home": "Home", "away": "Away"},
+  "frame_count": 4,
+  "row_count": 12,
+  "player_slot_count": 2,
+  "entity_count_per_frame": 3,
+  "entity_ids": ["player_7", "player_42", "ball"]
+}

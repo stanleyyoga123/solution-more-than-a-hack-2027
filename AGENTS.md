@@ -17,6 +17,10 @@ src/
 │   │   ├── __init__.py
 │   │   ├── __main__.py
 │   │   └── pipeline.py
+│   ├── 03_render_2d_tactical_video/
+│   │   ├── __init__.py
+│   │   ├── __main__.py
+│   │   └── pipeline.py
 │   └── ...
 └── utilities/
     ├── atd_reader.py
@@ -45,6 +49,7 @@ Run commands from the repository root:
 - `source .venv/bin/activate`: activate the project environment on macOS/Linux.
 - `python -m src.pipelines.01_populate_pixels --help`: inspect the pixel-export arguments.
 - `python -m src.pipelines.02_normalize_2d --help`: inspect the normalized-export arguments.
+- `python -m src.pipelines.03_render_2d_tactical_video --help`: inspect the minimap-video arguments; requires FFmpeg with `libx264` on PATH.
 - `python -m pytest tests/src/pipelines tests/src/utilities`: run the pipeline and utility checks.
 - `python -m black <paths>`: format the Python files being changed.
 - `python -m black --check <paths>`: verify formatting before finishing a change.

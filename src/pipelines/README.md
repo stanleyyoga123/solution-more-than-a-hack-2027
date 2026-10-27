@@ -1,6 +1,8 @@
-# Tracking coordinate exports
+# Tracking exports and tactical video
 
-These are two independent exports of the same supplied ATD observations. Each
+The first two steps independently export the same supplied ATD observations.
+The third renders a normalized CSV and its metadata as a top-down tactical video.
+Each
 numbered package owns one pipeline; shared readers and export helpers live in
 `src/utilities/`. Production imports stay inside `src/`.
 
@@ -12,10 +14,18 @@ src/
 │   │   ├── __main__.py
 │   │   ├── pipeline.py
 │   │   └── homography_reader.py
-│   └── 02_normalize_2d/
+│   ├── 02_normalize_2d/
+│   │   ├── __init__.py
+│   │   ├── __main__.py
+│   │   └── pipeline.py
+│   └── 03_render_2d_tactical_video/
 │       ├── __init__.py
 │       ├── __main__.py
-│       └── pipeline.py
+│       ├── pipeline.py
+│       ├── metadata_reader.py
+│       ├── normalized_reader.py
+│       ├── pitch_renderer.py
+│       └── video_encoder.py
 └── utilities/
     ├── atd_reader.py
     ├── epts_metadata.py
@@ -40,10 +50,11 @@ Run from the repository root with the project's Python environment:
 All input paths are required arguments. `--output-dir` defaults to `output`.
 Supply assets from the same recording; tactical and broadcast timelines are
 independent. There is no `recording_id` column or implicit match selection.
-Run the commands one by one: neither pipeline calls or executes the other.
-Both read the original ATD independently.
+Run the commands one by one: pipelines do not call or execute other pipelines.
+The first two read the original ATD independently. Step 03 takes the normalized
+artifacts produced by step 02, so run step 02 before invoking step 03.
 
-CLI logs are timestamped and sent to stderr, while stdout contains only the two
+CLI logs are timestamped and sent to stderr, while stdout contains only the
 published output paths. Logs describe the input files, loading and writing
 stages, then report processed frames, rows and elapsed seconds after publication.
 Interactive terminals show a `tqdm` frame progress bar; redirected runs use
@@ -126,6 +137,72 @@ normalize_2d = import_module("src.pipelines.02_normalize_2d").run_pipeline
 # Both functions return (csv_path, metadata_json_path).
 pixel_files = populate_pixels(tracking, metadata, homography, Path("output"))
 normalized_files = normalize_2d(tracking, metadata, Path("output"))
+```
+
+## Render a top-down tactical video
+
+After exporting normalized tracking, render video time 10:00–10:10 with:
+
+```bash
+.venv/bin/python -m src.pipelines.03_render_2d_tactical_video \
+  --tracking output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --output-dir output \
+  --start-seconds 600 \
+  --duration-seconds 10
+```
+
+Step 03 writes `output/tactical_2d_tracking.mp4`. FFmpeg must be installed on
+`PATH` with the `libx264` encoder. No additional Python dependencies are needed.
+The output is a silent 1280×720 H.264 MP4 at the metadata's source frame rate,
+using `yuv420p`, CRF 20, the `veryfast` preset and `faststart` playback metadata.
+It uses normalized CSV observations directly and needs no original video,
+homography, audio or ATD/XML files.
+
+`--start-seconds` defaults to zero; omit `--duration-seconds` to render through
+the end of the recording. Times refer to elapsed source recording time, not the
+scoreboard clock. The start frame is `floor(start_seconds × fps)`; a requested
+duration selects `ceil(duration_seconds × fps)` frames, clipped at the recording
+end. Start must be finite and nonnegative, duration must be finite and positive,
+and the selected interval must contain at least one frame. The on-screen header
+shows the original source frame number and recording timestamp even when the
+encoded clip begins later in the recording.
+
+Input CSV columns used are `frame`, `entity_id`, `entity_type`, `team_id`, `pos_x`
+and `pos_y`. Metadata supplies `fps`, `frame_count`, `pitch_dimensions` with
+`length` and `width` in metres, and the ordered `teams` mapping. The reader streams
+the frame-major CSV, skipping earlier frames and retaining only the selected
+frame's observations in memory. It does not audit or revalidate source schemas.
+
+The static pitch uses the physical length-to-width ratio, with white pitch
+markings and goals, plus a five-metre margin. Normalized x increases rightward
+and y downward. Team colours are stable in metadata order: blue, then red. Player
+markers carry the numeric tracking-ID suffix; these labels are not verified
+jersey numbers or persistent player identities. The ball is yellow. Missing or
+nonfinite coordinates have no marker, with explicit missing-ball and empty-frame
+notes. Finite off-pitch positions retain their coordinates and can appear within
+the five-metre margin. Positions beyond the drawable map are clipped from view;
+they are never moved onto a boundary. Marker shapes and labels also stay inside
+that map, leaving the header and legend clear. No interpolation or trails are
+added.
+
+The MP4 is staged under the output directory and published only after FFmpeg
+finishes successfully. Existing destinations and symlinks are refused. Failed
+rendering, encoding or publication cleans up temporary output and does not emit
+a completion message. Encoder stderr is included in encoding errors. Console
+logging and terminal/redirected progress follow the same rules as the exports.
+
+For Python callers:
+
+```python
+render_video = import_module("src.pipelines.03_render_2d_tactical_video").run_pipeline
+video_path = render_video(
+    tracking=Path("output/tracking_normalized_2d.csv"),
+    metadata=Path("output/tracking_normalized_2d.metadata.json"),
+    output_dir=Path("output"),
+    start_seconds=600,
+    duration_seconds=10,
+)
 ```
 
 Install the formatter and tests with `uv sync --group dev --extra test`.
