@@ -26,7 +26,7 @@
         <div>
           <p class="eyebrow">TRACKING WORKSPACE <span>01</span></p>
           <h1 id="match-title">Barcelona <span class="versus">vs</span> Athletic Club</h1>
-          <p class="intro">One moment. Two perspectives.</p>
+          <p class="intro">One moment. Three perspectives.</p>
         </div>
         <div class="session-meta">
           <span class="session-label">SOURCE TIMELINE</span>
@@ -46,6 +46,12 @@
           </label>
           <label class="toggle-label">
             <input id="show-overlay" type="checkbox" checked /> Camera overlay
+          </label>
+          <label class="toggle-label">
+            <input id="show-birdseye-labels" type="checkbox" checked /> Bird’s-eye labels
+          </label>
+          <label class="toggle-label">
+            <input id="show-birdseye-overlay" type="checkbox" checked /> Bird’s-eye overlay
           </label>
         </div>
       </div>
@@ -95,6 +101,35 @@
           <footer class="card-footer">
             <span id="pitch-dimensions">105 × 68 m</span>
             <strong id="pitch-count">— players tracked</strong>
+          </footer>
+        </article>
+        <article class="view-card birdseye-card">
+          <header class="card-header">
+            <div><span class="view-number">03</span><h2>Bird’s-eye footage</h2></div>
+            <span class="coordinate-tag">WARPED VIDEO</span>
+          </header>
+          <div class="visual-stage birdseye-stage">
+            <video
+              id="birdseye-video"
+              preload="auto"
+              playsinline
+              muted
+              hidden
+              aria-label="Original tactical footage transformed into a top-down view"
+            ></video>
+            <canvas
+              id="birdseye-overlay"
+              hidden
+              aria-label="Player and ball tracking over the bird’s-eye footage"
+            ></canvas>
+            <p id="birdseye-status" class="footage-status" role="status">
+              Loading bird’s-eye footage…
+            </p>
+            <span class="stage-label">BIRD’S-EYE / ORIGINAL FOOTAGE</span>
+          </div>
+          <footer class="card-footer">
+            <span>Unseen areas are black</span>
+            <strong id="birdseye-dimensions">Pipeline 04</strong>
           </footer>
         </article>
       </section>
@@ -178,7 +213,7 @@
         <p>
           <span class="note-mark">i</span>
           Numbers are tracking IDs, not verified shirt numbers.
-          Missing positions are omitted.
+          Missing positions are omitted. Warped footage can stretch players.
         </p>
         <p class="keyboard-hint">
           <kbd>Space</kbd> play / pause <span>·</span> <kbd>←</kbd>

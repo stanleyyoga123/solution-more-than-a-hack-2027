@@ -1,15 +1,21 @@
 import { frameAtTime, frameSeekTime } from "./timeline.js";
 
-/** Coordinate both tracking views from the source video's frame clock. */
+/** Coordinate tracking and rendered footage from the source video's frame clock. */
 export class ViewerController {
   /** @param {import('./tracking_types.js').ViewerDependencies} dependencies */
-  constructor({ video, controls, view, cache, camera, pitch, metadata }) {
+  constructor({
+    video, controls, view, cache, camera, pitch, birdseye, birdseyeOverlay, metadata,
+  }) {
     this._video = video;
     this._controls = controls;
     this._view = view;
     this._cache = cache;
     this._camera = camera;
     this._pitch = pitch;
+    this._birdseye = birdseye;
+    this._birdseyeOverlay = birdseyeOverlay;
+    this._birdseyeOverlay.setLabels(controls.birdseyeLabels.checked);
+    this._birdseyeOverlay.setVisible(controls.birdseyeOverlay.checked);
     this._metadata = metadata;
     this._currentFrame = -1;
     this._cameraLabels = controls.cameraLabels.checked;
@@ -26,6 +32,7 @@ export class ViewerController {
       return;
     }
     this._bindControls();
+    this._birdseye.start();
     this._pitch.clear();
     this._video.addEventListener("loadedmetadata", () => {
       this._view.enableControls();
@@ -34,16 +41,31 @@ export class ViewerController {
     this._video.addEventListener("seeking", () => {
       this._currentFrame = -1;
       this._clearTracking();
+      this._birdseye.suspend("Seeking source frame…");
       this._view.showStatus("Seeking source frame…", "loading");
     });
     this._video.addEventListener("seeked", () => {
       this._displayFrame(this._frameAt(this._video.currentTime));
     });
-    this._video.addEventListener("play", () => this._view.showPlaying(true));
-    this._video.addEventListener("pause", () => this._view.showPlaying(false));
+    this._video.addEventListener("play", () => {
+      this._view.showPlaying(true);
+      this._syncBirdseye();
+    });
+    this._video.addEventListener("playing", () => this._syncBirdseye());
+    this._video.addEventListener("ratechange", () => this._syncBirdseye());
+    this._video.addEventListener("pause", () => {
+      this._view.showPlaying(false);
+      if (!this._video.seeking) {
+        this._displayFrame(this._frameAt(this._video.currentTime));
+      }
+    });
     this._video.addEventListener("ended", () => this._view.showPlaying(false));
+    this._video.addEventListener("waiting", () => {
+      this._birdseye.suspend("Waiting for source video…");
+    });
     this._video.addEventListener("error", () => {
       this._clearTracking();
+      this._birdseye.suspend("Source video unavailable.");
       this._view.showStatus(
         "Cannot load the source video. Check the server's video path and browser codec support.",
         "error",
@@ -59,6 +81,7 @@ export class ViewerController {
     this._video.pause();
     this._currentFrame = -1;
     this._clearTracking();
+    this._birdseye.suspend("Seeking source frame…");
     this._controls.frame.value = String(target);
     this._view.showFrame(target, this._metadata.fps);
     this._view.showStatus("Seeking source frame…", "loading");
@@ -93,6 +116,7 @@ export class ViewerController {
   /** @param {number} frame */
   async _displayFrame(frame) {
     this._currentFrame = frame;
+    this._syncBirdseye(frame);
     this._view.showFrame(frame, this._metadata.fps);
     const cached = this._cache.peek(frame);
     if (cached) {
@@ -180,6 +204,12 @@ export class ViewerController {
       this._overlay = controls.overlay.checked;
       this._redrawCurrentFrame();
     });
+    controls.birdseyeLabels.addEventListener("change", () => {
+      this._birdseyeOverlay.setLabels(controls.birdseyeLabels.checked);
+    });
+    controls.birdseyeOverlay.addEventListener("change", () => {
+      this._birdseyeOverlay.setVisible(controls.birdseyeOverlay.checked);
+    });
     controls.keyboardTarget.addEventListener("keydown", (event) => {
       if (event.target.closest("input, select, button, a")) return;
       if (event.code === "Space") {
@@ -197,5 +227,15 @@ export class ViewerController {
     if (this._currentFrame >= 0 && !this._video.seeking) {
       this._displayFrame(this._currentFrame);
     }
+  }
+
+  /** @param {number} frame */
+  _syncBirdseye(frame = this._frameAt(this._video.currentTime)) {
+    if (this._video.seeking) return;
+    this._birdseye.sync(
+      frame,
+      !this._video.paused && !this._video.ended,
+      this._video.playbackRate,
+    );
   }
 }

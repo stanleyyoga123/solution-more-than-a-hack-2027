@@ -24,10 +24,26 @@ def main() -> None:
         type=Path,
         default=Path("output/tracking_normalized_2d.metadata.json"),
     )
+    parser.add_argument(
+        "--birdseye-video",
+        type=Path,
+        help="Warped footage; defaults to output/tactical_birdseye.mp4 when present",
+    )
+    parser.add_argument(
+        "--birdseye-start-seconds",
+        type=float,
+        default=0.0,
+        help="Source start time used to render a trimmed bird's-eye clip",
+    )
     parser.add_argument("--cache-dir", type=Path, default=Path("output/frontend"))
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     configure_console_logging()
+    birdseye_video = args.birdseye_video
+    if birdseye_video is None:
+        default_birdseye = Path("output/tactical_birdseye.mp4")
+        if default_birdseye.is_file():
+            birdseye_video = default_birdseye
     with create_server(
         args.video,
         args.pixels,
@@ -35,6 +51,8 @@ def main() -> None:
         args.metadata,
         args.cache_dir,
         args.port,
+        birdseye_video=birdseye_video,
+        birdseye_start_seconds=args.birdseye_start_seconds,
     ) as server:
         logging.getLogger(__name__).info(
             "Tracking viewer ready: http://127.0.0.1:%d", server.server_port

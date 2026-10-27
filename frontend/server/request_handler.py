@@ -20,11 +20,13 @@ class RequestHandler(BaseHTTPRequestHandler):
         metadata: dict,
         video: Path,
         web_dir: Path,
+        birdseye_video: Path | None = None,
         **kwargs,
     ):
         self._store = store
         self._metadata = metadata
         self._video = video
+        self._birdseye_video = birdseye_video
         self._web_dir = web_dir.resolve()
         super().__init__(*args, **kwargs)
 
@@ -57,6 +59,12 @@ class RequestHandler(BaseHTTPRequestHandler):
             return
         if url.path == "/video":
             send_file(self, self._video, send_body)
+            return
+        if url.path == "/birdseye-video":
+            if self._birdseye_video is None:
+                self.send_error(404, "Bird's-eye video is not configured")
+                return
+            send_file(self, self._birdseye_video, send_body)
             return
 
         relative = unquote(url.path).lstrip("/") or "index.html"

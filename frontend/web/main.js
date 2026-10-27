@@ -4,6 +4,9 @@ import { CameraRenderer } from "./viewer/camera_renderer.js";
 import { PitchRenderer } from "./viewer/pitch_renderer.js";
 import { ViewerController } from "./viewer/viewer_controller.js";
 import { ViewerView } from "./viewer/viewer_view.js";
+import { BirdseyePlayback } from "./viewer/birdseye_playback.js";
+import { BirdseyeOverlay } from "./viewer/birdseye_overlay.js";
+import { BirdseyeOverlayRenderer } from "./viewer/birdseye_overlay_renderer.js";
 import { teamColours } from "./viewer/entity_markers.js";
 
 async function startViewer() {
@@ -12,6 +15,7 @@ async function startViewer() {
   try {
     const metadata = await client.metadata();
     const colours = teamColours(metadata.teams);
+    const cache = new FrameCache(client, metadata.frame_count);
     const video = document.querySelector("#source-video");
     video.parentElement.style.aspectRatio = `${metadata.video_width} / ${metadata.video_height}`;
     view.initialize(metadata, colours);
@@ -26,6 +30,22 @@ async function startViewer() {
       metadata.pitch_dimensions,
       colours,
     );
+    const birdseyeOverlay = new BirdseyeOverlay(
+      new BirdseyeOverlayRenderer(
+        document.querySelector("#birdseye-overlay"),
+        metadata.pitch_dimensions,
+        metadata.birdseye,
+        colours,
+      ),
+      cache,
+    );
+    const birdseye = new BirdseyePlayback(
+      document.querySelector("#birdseye-video"),
+      document.querySelector("#birdseye-status"),
+      metadata.birdseye,
+      metadata.fps,
+      (frame) => birdseyeOverlay.showFrame(frame),
+    );
     const controls = {
       play: document.querySelector("#play-pause"),
       previous: document.querySelector("#previous-frame"),
@@ -36,12 +56,13 @@ async function startViewer() {
       speed: document.querySelector("#playback-speed"),
       cameraLabels: document.querySelector("#show-camera-labels"),
       pitchLabels: document.querySelector("#show-pitch-labels"),
+      birdseyeLabels: document.querySelector("#show-birdseye-labels"),
+      birdseyeOverlay: document.querySelector("#show-birdseye-overlay"),
       overlay: document.querySelector("#show-overlay"),
       keyboardTarget: document,
     };
     const controller = new ViewerController({
-      video, controls, view, camera, pitch, metadata,
-      cache: new FrameCache(client, metadata.frame_count),
+      video, controls, view, camera, pitch, birdseye, birdseyeOverlay, metadata, cache,
     });
     controller.start();
   } catch (error) {

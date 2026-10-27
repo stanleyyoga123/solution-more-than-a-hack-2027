@@ -206,7 +206,7 @@ h1 {
 }
 .comparison {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 .view-card {
@@ -283,6 +283,39 @@ h2 {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+.birdseye-stage video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+.birdseye-stage video[hidden] {
+  display: none;
+}
+#birdseye-overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+#birdseye-overlay[hidden] {
+  display: none;
+}
+.footage-status {
+  max-width: 270px;
+  margin: 25px;
+  color: #b5c0ac;
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
+}
+.footage-status[data-state="error"] {
+  color: #ffa99c;
 }
 .stage-label {
   position: absolute;
@@ -524,6 +557,17 @@ kbd {
   }
   .team-legend {
     gap: 13px;
+  }
+}
+@media (min-width: 701px) and (max-width: 1200px) {
+  .comparison {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .birdseye-card {
+    grid-column: 1 / -1;
+  }
+  .birdseye-stage {
+    max-height: 400px;
   }
 }
 @media (max-width: 700px) {

@@ -25,6 +25,12 @@ export class ViewerView {
     this._document.querySelector("#pitch-dimensions").textContent = (
       `${pitch.length} × ${pitch.width} m · x →  y ↓`
     );
+    const footage = metadata.birdseye;
+    if (footage !== null) {
+      this._document.querySelector("#birdseye-dimensions").textContent = (
+        `${footage.width} × ${footage.height}`
+      );
+    }
     const legend = this._document.querySelector("#team-legend");
     for (const [id, name] of Object.entries(metadata.teams)) {
       legend.append(this._legendItem(name, colours.get(id)));
