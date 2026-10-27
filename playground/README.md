@@ -9,6 +9,12 @@ forecasting, Viterbi decoding, interception races, self-supervised estimation, a
 actual YOLO video recovery. Its [separate write-up](CREATIVE_EXPERIMENTS.md) records
 all results and detector limitations.
 
+The [interception refinement guide](refinement/README.md) adds a third fixed batch:
+forecast combinations, robust velocities, acceleration-based arrival estimates,
+and alternative control and stoppage continuity rules.
+Its [write-up](REFINEMENT_EXPERIMENTS.md) records the full comparison and the
+trade-off between interval and frame-level scores.
+
 The fixed experiment sequence and domain settings are declared before scoring.
 Inference sees tracking and automatic tactical tags, never possession labels.
 The runner creates every prediction file before reading the public ground truth.
