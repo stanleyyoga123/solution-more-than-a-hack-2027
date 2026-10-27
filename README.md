@@ -122,6 +122,9 @@ Controls include:
 - Independent camera, pitch, and bird's-eye label toggles.
 - Separate camera and bird's-eye overlay toggles. Hiding labels keeps dots visible;
   hiding an overlay removes both dots and labels from that view.
+- A tracking-quality review panel when step 07/08 reports are available: filter
+  by entity or gap status, navigate motion episodes and gaps, and highlight the
+  selected entity across the views.
 
 See the [frontend guide](frontend/README.md) for custom paths and playback details.
 
@@ -138,6 +141,8 @@ They do not import or execute each other; shared code lives in `src/utilities/`.
 | `04_render_birdseye_tactical_video` | Original video, homography CSV, XML | `tactical_birdseye.mp4` — warped footage |
 | `05_possession_baseline` | ATD text and XML | `possession_baseline.csv` submission and metadata JSON |
 | `06_score_submission` | Any submission CSV and a ground-truth CSV | `<submission>.scores.json` — official metrics |
+| `07_flag_impossible_trajectories` | Normalized CSV and its metadata JSON | `tracking_trajectory_flags.csv` and metadata JSON |
+| `08_assess_identity_continuity` | Normalized CSV, metadata, and step 07 reports | `tracking_gap_continuity.csv` and metadata JSON |
 
 Step 03 consumes step 02's exported files. Step 04 works directly from the
 original recording assets and needs no previous pipeline output. The frontend
@@ -170,6 +175,38 @@ Distances use the metadata's 105 × 68 m pitch, not the organisers' measured
 105.3 × 68 m, so a few frames differ from their `baseline_smooth50.csv`; the
 public-window scores are the same. That window has only 17 possessions: use it
 to check a pipeline, not to tune one.
+
+### Tracking quality and gaps
+
+Step 07 flags suspicious player speed and acceleration, and suspicious ball
+speed. Step 08 assesses gaps within each tracking slot using endpoint motion and
+step 07's flags. Run these after step 02:
+
+```bash
+python -m src.pipelines.07_flag_impossible_trajectories \
+  --tracking output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --output-dir output
+
+python -m src.pipelines.08_assess_identity_continuity \
+  --tracking output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --flags output/tracking_trajectory_flags.csv \
+  --flags-metadata output/tracking_trajectory_flags.metadata.json \
+  --output-dir output
+```
+
+These steps write separate diagnostic reports; they preserve positions, nulls
+and entity IDs. A `plausible` gap means its motion is consistent with continuity,
+not that a player's identity is verified. Longer gaps remain uncertain by default
+(maximum two seconds), and no positions are filled. See the
+[quality pipeline details](src/pipelines/README.md#flag-suspicious-trajectories)
+for thresholds, report columns and interpretation.
+
+Restart the frontend after generating the reports to load them into its tracking
+quality panel. Default report paths are detected independently; use
+`--trajectory-flags` and `--gap-continuity` for custom locations. See the
+[frontend review controls](frontend/README.md#review-tracking-quality).
 
 To export the first ten seconds as a tracking-map video:
 

@@ -16,8 +16,9 @@ export function teamColours(teams) {
  * @param {Map<string, string>} colours
  * @param {boolean} labels
  * @param {number} radius
+ * @param {boolean} [highlighted]
  */
-export function drawEntity(context, entity, x, y, colours, labels, radius) {
+export function drawEntity(context, entity, x, y, colours, labels, radius, highlighted = false) {
   const isBall = entity.entity_type === "ball";
   context.beginPath();
   context.arc(x, y, isBall ? radius * 0.8 : radius, 0, Math.PI * 2);
@@ -26,6 +27,13 @@ export function drawEntity(context, entity, x, y, colours, labels, radius) {
   context.strokeStyle = "#111a11";
   context.lineWidth = Math.max(1.5, radius / 4);
   context.stroke();
+  if (highlighted) {
+    context.beginPath();
+    context.arc(x, y, radius * 1.65, 0, Math.PI * 2);
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = Math.max(2, radius / 4);
+    context.stroke();
+  }
   if (!labels) return;
 
   const label = isBall ? "Ball" : entity.entity_id.replace(/^player_/, "");

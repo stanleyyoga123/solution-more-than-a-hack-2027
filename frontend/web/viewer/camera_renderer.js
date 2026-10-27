@@ -14,6 +14,12 @@ export class CameraRenderer {
     this._canvas.height = height;
     this._context = canvas.getContext("2d");
     this._colours = colours;
+    this._highlightedEntity = null;
+  }
+
+  /** @param {string|null} entityId */
+  setHighlightedEntity(entityId) {
+    this._highlightedEntity = entityId;
   }
 
   clear() {
@@ -42,6 +48,7 @@ export class CameraRenderer {
           this._colours,
           labels,
           15,
+          entity.entity_id === this._highlightedEntity,
         );
       }
     }

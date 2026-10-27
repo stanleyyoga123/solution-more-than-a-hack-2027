@@ -5,6 +5,7 @@ export class ViewerController {
   /** @param {import('./tracking_types.js').ViewerDependencies} dependencies */
   constructor({
     video, controls, view, cache, camera, pitch, birdseye, birdseyeOverlay, metadata,
+    qualityReview,
   }) {
     this._video = video;
     this._controls = controls;
@@ -17,6 +18,7 @@ export class ViewerController {
     this._birdseyeOverlay.setLabels(controls.birdseyeLabels.checked);
     this._birdseyeOverlay.setVisible(controls.birdseyeOverlay.checked);
     this._metadata = metadata;
+    this._qualityReview = qualityReview;
     this._currentFrame = -1;
     this._cameraLabels = controls.cameraLabels.checked;
     this._pitchLabels = controls.pitchLabels.checked;
@@ -36,6 +38,7 @@ export class ViewerController {
     this._pitch.clear();
     this._video.addEventListener("loadedmetadata", () => {
       this._view.enableControls();
+      this._qualityReview.setReady(true);
       this.seek(this._metadata.default_frame);
     }, { once: true });
     this._video.addEventListener("seeking", () => {
@@ -64,6 +67,7 @@ export class ViewerController {
       this._birdseye.suspend("Waiting for source video…");
     });
     this._video.addEventListener("error", () => {
+      this._qualityReview.setReady(false);
       this._clearTracking();
       this._birdseye.suspend("Source video unavailable.");
       this._view.showStatus(
@@ -84,8 +88,19 @@ export class ViewerController {
     this._birdseye.suspend("Seeking source frame…");
     this._controls.frame.value = String(target);
     this._view.showFrame(target, this._metadata.fps);
+    this._qualityReview.showFrame(target);
     this._view.showStatus("Seeking source frame…", "loading");
     this._video.currentTime = frameSeekTime(target, this._metadata.fps);
+  }
+
+  /** Highlight an observed entity without creating positions across missing data.
+   * @param {string|null} entityId
+   */
+  highlightEntity(entityId) {
+    this._camera.setHighlightedEntity(entityId);
+    this._pitch.setHighlightedEntity(entityId);
+    this._birdseyeOverlay.setHighlightedEntity(entityId);
+    this._redrawCurrentFrame();
   }
 
   async _togglePlayback() {
@@ -118,6 +133,7 @@ export class ViewerController {
     this._currentFrame = frame;
     this._syncBirdseye(frame);
     this._view.showFrame(frame, this._metadata.fps);
+    this._qualityReview.showFrame(frame);
     const cached = this._cache.peek(frame);
     if (cached) {
       this._renderTracking(cached);

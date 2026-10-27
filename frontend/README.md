@@ -23,6 +23,8 @@ The defaults use:
 - `output/tracking_normalized_2d.csv`
 - `output/tracking_normalized_2d.metadata.json`
 - `output/tactical_birdseye.mp4`, when present
+- `output/tracking_trajectory_flags.csv`, when present
+- `output/tracking_gap_continuity.csv`, when present
 
 Generate the two CSVs with pipelines 01 and 02 before starting the viewer.
 The viewer does not run pipelines or require the video from pipeline 03.
@@ -87,6 +89,50 @@ offsets. It clears during seeking, unavailable footage, or tracking loads, so
 old positions are not left on a new frame. Coordinates use pipeline 04's fixed
 12 pixels per metre and preserve any padding for even video dimensions. The
 video file itself is unchanged; overlays are drawn only in the browser.
+
+## Review tracking quality
+
+Generate reports with steps 07 and 08, then restart the viewer. Reports are loaded
+once at startup; the viewer does not run these pipelines. Each default report is
+optional and detected independently. Without reports, video playback and tracking
+overlays continue to work and the quality panel explains what is unavailable.
+An explicitly supplied missing report path is a startup error.
+
+For reports in a different directory:
+
+```bash
+python -m frontend \
+  --trajectory-flags output/review/tracking_trajectory_flags.csv \
+  --gap-continuity output/review/tracking_gap_continuity.csv
+```
+
+Use reports from the same recording and frame timeline as the displayed tracking.
+
+The **Tracking quality** panel provides:
+
+- Counts of flagged samples, grouped motion episodes and gaps by status.
+- Filters for a tracking entity, motion flags or a gap classification.
+- A timeline with separate motion and gap lanes, aligned to source-video frames.
+- Previous/next navigation and a paginated event list for precise selection.
+- Selected-event details, including frame bounds, motion values or gap duration
+  and classification reason.
+- Jumps to a motion episode's peak sample or the observed frame before a gap,
+  with before/after boundary controls for gaps that have those observations.
+- A highlight toggle for the selected entity in the camera, pitch and bird's-eye
+  overlays. Existing label and overlay toggles remain independent.
+
+Neighboring or overlapping flagged support intervals for the same entity are
+grouped into one motion episode. The sample count remains available: an episode
+is a convenient review interval, not an independently verified error. A motion
+episode with speed flags jumps to its highest flagged speed; an acceleration-only
+episode jumps to its highest acceleration. Highlights use existing observations
+only, so no marker is invented while an entity's position is missing. Bird's-eye
+highlights follow that footage's displayed frame.
+
+Gap statuses retain step 08's meaning: `plausible` indicates consistent same-slot
+motion, `implausible` indicates excessive required endpoint speed, and `uncertain`
+means the available evidence is insufficient. These reports do not verify player
+identity, fill nulls or alter the videos and tracking files.
 
 ## Code and checks
 

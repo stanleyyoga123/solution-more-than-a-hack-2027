@@ -209,6 +209,76 @@
         </div>
       </section>
 
+      <section id="quality-review" class="quality-review" aria-labelledby="quality-title">
+        <header class="quality-header">
+          <div>
+            <p class="eyebrow">STEPS 07 / 08</p>
+            <h2 id="quality-title">Tracking quality</h2>
+            <p id="quality-summary" class="quality-summary">Loading quality reports…</p>
+          </div>
+          <label class="toggle-label">
+            <input id="quality-highlight" type="checkbox" checked /> Highlight selected entity
+          </label>
+        </header>
+        <p class="quality-note">
+          Motion warnings and gap assessments guide review. They do not verify identity or fill missing positions.
+        </p>
+        <p id="quality-status" class="quality-status" role="status">Loading reports…</p>
+        <p id="quality-gap-counts" class="quality-summary"></p>
+        <div class="quality-filters">
+          <label for="quality-category">Show
+            <select id="quality-category">
+              <option value="all">All events</option>
+              <option value="motion">Motion warnings</option>
+              <option value="implausible">Implausible gaps</option>
+              <option value="uncertain">Uncertain gaps</option>
+              <option value="plausible">Plausible gaps</option>
+            </select>
+          </label>
+          <label for="quality-entity">Entity
+            <select id="quality-entity"><option value="all">All entities</option></select>
+          </label>
+          <div class="quality-navigation">
+            <button id="quality-previous" class="quality-button" disabled>← Previous event</button>
+            <button id="quality-next" class="quality-button" disabled>Next event →</button>
+          </div>
+        </div>
+        <div class="quality-timeline-wrap">
+          <div class="quality-lane-labels" aria-hidden="true"><span>Motion</span><span>Gaps</span></div>
+          <canvas id="quality-timeline" width="1400" height="80"
+            aria-label="Motion and gap intervals. Use the event list or previous and next event buttons for keyboard navigation."
+          ></canvas>
+        </div>
+        <div class="quality-legend" aria-label="Quality event colours">
+          <span><i class="quality-motion"></i>Motion warning</span>
+          <span><i class="quality-implausible"></i>Implausible gap</span>
+          <span><i class="quality-uncertain"></i>Uncertain gap</span>
+          <span><i class="quality-plausible"></i>Plausible gap</span>
+          <span class="quality-playhead-note">White line: current frame</span>
+        </div>
+        <div class="quality-body">
+          <div class="quality-list-panel">
+            <ul id="quality-events" class="quality-events" aria-label="Quality events"></ul>
+            <div class="quality-pagination">
+              <button id="quality-page-previous" class="quality-button" disabled>Previous page</button>
+              <span id="quality-page">Page 1 of 1</span>
+              <button id="quality-page-next" class="quality-button" disabled>Next page</button>
+            </div>
+          </div>
+          <aside class="quality-selection" aria-labelledby="quality-selection-title">
+            <h3 id="quality-selection-title">Select a motion episode or gap</h3>
+            <p id="quality-current-context" class="quality-context"></p>
+            <dl id="quality-metrics" class="quality-metrics"></dl>
+            <p id="quality-selection-note" class="quality-note">Select an event to inspect its footage.</p>
+            <div class="quality-boundaries">
+              <button id="quality-before" class="quality-button" disabled>Before / start</button>
+              <button id="quality-after" class="quality-button" disabled>After / end</button>
+              <button id="quality-clear" class="quiet-button" disabled>Clear selection</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
       <footer class="workspace-footer">
         <p>
           <span class="note-mark">i</span>
