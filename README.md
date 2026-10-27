@@ -64,6 +64,7 @@ overwritten, so use a fresh `--output-dir` for a rerun.
 | `06_score_submission` | Any submission CSV and a ground-truth CSV | `<submission>.scores.json` with the official metrics |
 | `07_flag_impossible_trajectories` | Normalized CSV and its metadata JSON | `tracking_trajectory_flags.csv` and metadata JSON |
 | `08_assess_identity_continuity` | Normalized CSV, metadata, and step 07 reports | `tracking_gap_continuity.csv` and metadata JSON |
+| `09_correct_tracking` | Normalized CSV, metadata, and step 07/08 reports | Corrected tracking, correction audit, metadata, and validation JSON |
 
 The [pipeline guide](src/pipelines/README.md) has the full arguments, CSV
 schema, coordinate conventions and Python APIs.
@@ -120,6 +121,28 @@ not that a player's identity is verified. Longer gaps remain uncertain by defaul
 (maximum two seconds), and no positions are filled. See the
 [quality pipeline details](src/pipelines/README.md#flag-suspicious-trajectories)
 for thresholds, report columns and interpretation.
+
+Step 09 writes a separate corrected copy. It repairs uniquely supported isolated
+spikes, links compatible same-team track segments, and fills short bounded gaps
+that pass motion checks. Original slot IDs and positions remain available;
+`corrected_entity_id` describes an inferred track identity, not a verified player.
+
+```bash
+python -m src.pipelines.09_correct_tracking \
+  --tracking output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --flags output/tracking_trajectory_flags.csv \
+  --flags-metadata output/tracking_trajectory_flags.metadata.json \
+  --gaps output/tracking_gap_continuity.csv \
+  --gaps-metadata output/tracking_gap_continuity.metadata.json \
+  --output-dir output
+```
+
+The default gap limits are three seconds for players and 0.2 seconds for the
+ball. Long or ambiguous gaps stay missing. Every applied change has an audit
+record; the validation report measures reconstruction of supplied observations,
+not accuracy against the footage. See [correction details](src/pipelines/README.md#correct-tracking-and-impute-supported-gaps).
+The viewer continues to use the original exports by default.
 
 Restart the frontend after generating the reports to load them into its tracking
 quality panel. Default report paths are detected independently; use

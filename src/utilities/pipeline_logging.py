@@ -24,25 +24,30 @@ def configure_console_logging() -> None:
 
 
 def _logged_progress(
-    items: Iterable[_Item], total: int, label: str, logger: logging.Logger
+    items: Iterable[_Item], total: int, label: str, logger: logging.Logger, unit: str
 ) -> Iterator[_Item]:
     last_report = monotonic()
-    logger.info("%s: processing %d frames", label, total)
+    logger.info("%s: processing %d %ss", label, total, unit)
     for count, item in enumerate(items, start=1):
         yield item
         now = monotonic()
         if now - last_report >= _LOG_INTERVAL_SECONDS:
-            logger.info("%s: %d/%d frames processed", label, count, total)
+            logger.info("%s: %d/%d %ss processed", label, count, total, unit)
             last_report = now
 
 
 @contextmanager
 def frame_progress(
-    items: Iterable[_Item], total: int, label: str, logger: logging.Logger
+    items: Iterable[_Item],
+    total: int,
+    label: str,
+    logger: logging.Logger,
+    *,
+    unit: str = "frame",
 ) -> Iterator[Iterator[_Item]]:
     """Use a terminal bar or occasional redirected logs; close the bar on failure."""
     if sys.stderr.isatty():
-        with tqdm(items, total=total, desc=label, unit="frame", file=sys.stderr) as bar:
+        with tqdm(items, total=total, desc=label, unit=unit, file=sys.stderr) as bar:
             yield iter(bar)
     else:
-        yield _logged_progress(items, total, label, logger)
+        yield _logged_progress(items, total, label, logger, unit)

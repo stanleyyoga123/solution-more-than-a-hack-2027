@@ -41,7 +41,8 @@ src/
 │   ├── 05_possession_baseline/
 │   ├── 06_score_submission/
 │   ├── 07_flag_impossible_trajectories/
-│   └── 08_assess_identity_continuity/
+│   ├── 08_assess_identity_continuity/
+│   └── 09_correct_tracking/
 └── utilities/
     ├── atd_reader.py
     ├── epts_metadata.py
@@ -414,6 +415,85 @@ gap_csv, gap_metadata = assess_continuity(
     tracking, metadata, flags, flags_metadata, Path("output")
 )
 ```
+
+## Correct tracking and impute supported gaps
+
+Step 09 consumes the normalized export and both diagnostic reports. It does not
+run earlier steps or modify their artifacts:
+
+```bash
+python -m src.pipelines.09_correct_tracking \
+  --tracking output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --flags output/tracking_trajectory_flags.csv \
+  --flags-metadata output/tracking_trajectory_flags.metadata.json \
+  --gaps output/tracking_gap_continuity.csv \
+  --gaps-metadata output/tracking_gap_continuity.metadata.json \
+  --output-dir output
+```
+
+Corrections have three stages:
+
+1. Repair isolated spikes lasting at most 0.2 seconds only when excessive-speed
+   transitions surround a uniquely supported interval. Reliable observations on
+   both sides must support a linear replacement that passes speed and player
+   acceleration checks. Acceleration-only flags do not trigger replacement.
+2. Divide player observations into segments at missing runs and remaining
+   excessive-speed transitions. Link segments only within the same team, across
+   at most three seconds, with clean 0.2-second endpoint context, feasible speed,
+   and forward/backward prediction errors of at most two metres. Both segments
+   must prefer each other with at least a one-metre advantage over alternatives.
+   An inferred identity cannot contain simultaneous observations from two slots.
+3. Linearly interpolate bounded gaps within accepted identity chains only when
+   the entire replacement and its joins pass motion checks. Player gaps may be
+   at most three seconds; ball gaps at most 0.2 seconds, with a three-metre ball
+   prediction tolerance. Ball acceleration is not constrained. Cross-slot gaps
+   use the departing source slot only if it is missing throughout the interval.
+
+Identity linking and imputation are separate decisions: accepting a link does
+not guarantee that its gap can be filled. Long, unbounded, or ambiguous gaps
+remain missing. The pipeline never extrapolates, clamps off-pitch coordinates,
+or uses imputed positions to justify another identity link. Step 08's earlier
+classifications are retained as audit evidence; its two-second cutoff is
+explicitly reassessed under step 09's three-second player policy.
+
+The outputs are:
+
+| Artifact | Contents |
+| --- | --- |
+| `tracking_corrected_2d.csv` | Every source row, with corrected normalized coordinates and provenance columns. |
+| `tracking_corrected_2d.metadata.json` | Source paths, effective policy, coordinate conventions, identity semantics, and correction counts. |
+| `tracking_corrections.csv` | Accepted and rejected repair, link, and imputation decisions, with reasons and motion measurements. |
+| `tracking_correction_validation.json` | Deterministic masking evaluation, identity-fragmentation checks, and before/after diagnostics. |
+
+Existing columns retain their meaning: `entity_id` is the original slot,
+`speed_raw` is untouched, and `pos_x`, `pos_y`, and `position_valid` describe the
+resulting position. Additional columns distinguish observations from estimates:
+
+| Columns | Meaning |
+| --- | --- |
+| `source_pos_x`, `source_pos_y` | Original position cells, including partial or fully missing observations. |
+| `corrected_entity_id` | Deterministic inferred player-chain ID; `ball` for the ball; blank for unresolved missing rows. |
+| `segment_id` | Observed segment reference. |
+| `position_status` | `observed`, `repaired`, `imputed`, or `missing`. |
+| `correction_id` | Audit reference for a changed position. |
+
+Names and shirt numbers in the tactical XML are tracking-slot labels. Inferred
+identities therefore describe motion continuity, not verified people. The audit
+contains measurements and decisions rather than invented confidence
+probabilities. The original CSV remains the source of truth for supplied values.
+
+Validation hides clean observed windows and reconstructs them using visible
+context, reporting acceptance counts and errors by entity type, duration, and
+recording-time block. Controlled identity tests fragment trajectories to check
+recovery and ambiguity rejection. These checks measure consistency with the
+supplied tracks; they cannot establish accuracy against the footage or identity
+ground truth. A successful run can leave most nulls unresolved.
+
+Generated outputs are published together without overwriting existing files.
+Temporary processing storage is cleaned up on success or failure. Logs and
+progress go to stderr; the four final output paths go to stdout. The frontend
+does not automatically switch to these outputs or display inferred identities.
 
 Install the formatter and tests with `uv sync --group dev --extra test`.
 Format changed Python files with `python -m black <paths>` and verify them with
