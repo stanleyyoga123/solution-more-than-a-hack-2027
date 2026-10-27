@@ -15,6 +15,23 @@ and alternative control and stoppage continuity rules.
 Its [write-up](REFINEMENT_EXPERIMENTS.md) records the full comparison and the
 trade-off between interval and frame-level scores.
 
+The [restart experiment guide](restarts/README.md) tests Smart Tagging set-piece
+context as evidence for dead-ball intervals, with event-specific geometry,
+motion-confirmed restarts and explicit comparisons against the r06 reference.
+Its [write-up](RESTART_EXPERIMENTS.md) records all nine new variants: frame-level
+accuracy improved, but none exceeded the previous best spellF1.
+
+The [fragmentation guide](fragmentation/README.md) separates uncertainty from
+stoppage evidence and tests gap joining, unsupported opponent islands, and
+turnover timing. Its [write-up](FRAGMENTATION_EXPERIMENTS.md) explains the small
+spellF1 increase, including its dependence on just two graded frames.
+
+The [possession error investigation](POSSESSION_ERROR_ANALYSIS.md) traces a
+missed stoppage and a goalkeeper identity discontinuity. It records the
+[control/stoppage fixes](possession_fixes/README.md) and
+[reacquisition experiments](reacquisition/README.md), including rejected
+corrections. The strongest interval candidate raises public spellF1 to 0.6125.
+
 The fixed experiment sequence and domain settings are declared before scoring.
 Inference sees tracking and automatic tactical tags, never possession labels.
 The runner creates every prediction file before reading the public ground truth.
