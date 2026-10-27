@@ -34,7 +34,8 @@ async function startViewer() {
       timeline: document.querySelector("#timeline"),
       frame: document.querySelector("#frame-input"),
       speed: document.querySelector("#playback-speed"),
-      labels: document.querySelector("#show-labels"),
+      cameraLabels: document.querySelector("#show-camera-labels"),
+      pitchLabels: document.querySelector("#show-pitch-labels"),
       overlay: document.querySelector("#show-overlay"),
       keyboardTarget: document,
     };

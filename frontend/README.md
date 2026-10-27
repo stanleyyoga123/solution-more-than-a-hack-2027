@@ -38,7 +38,7 @@ requests small frame ranges instead of downloading entire CSVs.
 - Scrub the shared timeline or enter a frame number.
 - Step backward or forward one frame while paused.
 - Jump to the approximate first kickoff, frame 11186 (447.44 seconds at 25 FPS).
-- Toggle tracking labels and the camera overlay.
+- Toggle camera labels and pitch labels independently, or hide the camera overlay.
 
 Blue and red identify the teams consistently in both views; yellow marks the
 ball. Labels are tracking-slot IDs, **not verified shirt numbers**. Camera markers

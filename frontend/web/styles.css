@@ -167,6 +167,7 @@ h1 {
 }
 .view-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   margin: 0 0 15px;
@@ -186,6 +187,7 @@ h1 {
 }
 .view-options {
   display: flex;
+  flex-wrap: wrap;
   gap: 21px;
 }
 .toggle-label {

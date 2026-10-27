@@ -12,7 +12,8 @@ export class ViewerController {
     this._pitch = pitch;
     this._metadata = metadata;
     this._currentFrame = -1;
-    this._labels = true;
+    this._cameraLabels = controls.cameraLabels.checked;
+    this._pitchLabels = controls.pitchLabels.checked;
     this._overlay = true;
   }
 
@@ -116,8 +117,12 @@ export class ViewerController {
 
   /** @param {import('./tracking_types.js').TrackingFrame} positions */
   _renderTracking(positions) {
-    const visible = this._camera.render(positions.pixels, this._labels, this._overlay);
-    this._pitch.render(positions.normalized, this._labels);
+    const visible = this._camera.render(
+      positions.pixels,
+      this._cameraLabels,
+      this._overlay,
+    );
+    this._pitch.render(positions.normalized, this._pitchLabels);
     const tracked = positions.normalized.filter(
       (entity) => entity.entity_type === "player",
     ).length;
@@ -163,8 +168,12 @@ export class ViewerController {
     controls.speed.addEventListener("change", () => {
       this._video.playbackRate = Number(controls.speed.value);
     });
-    controls.labels.addEventListener("change", () => {
-      this._labels = controls.labels.checked;
+    controls.cameraLabels.addEventListener("change", () => {
+      this._cameraLabels = controls.cameraLabels.checked;
+      this._redrawCurrentFrame();
+    });
+    controls.pitchLabels.addEventListener("change", () => {
+      this._pitchLabels = controls.pitchLabels.checked;
       this._redrawCurrentFrame();
     });
     controls.overlay.addEventListener("change", () => {

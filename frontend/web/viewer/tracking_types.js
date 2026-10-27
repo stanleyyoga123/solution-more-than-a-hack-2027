@@ -29,7 +29,8 @@
  * @property {HTMLInputElement} timeline
  * @property {HTMLInputElement} frame
  * @property {HTMLSelectElement} speed
- * @property {HTMLInputElement} labels
+ * @property {HTMLInputElement} cameraLabels
+ * @property {HTMLInputElement} pitchLabels
  * @property {HTMLInputElement} overlay
  * @property {Document} keyboardTarget
  *
