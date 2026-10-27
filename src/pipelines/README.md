@@ -6,6 +6,12 @@ The fourth warps the original footage into a top-down pitch view using homograph
 Each numbered package owns one pipeline; shared readers and export helpers live in
 `src/utilities/`. Production imports stay inside `src/`.
 
+Generated data is available in the
+[Google Drive folder](https://drive.google.com/drive/folders/1BuxSs5RT_My3yr1fbt8TtAzbFK5tiay5).
+Place downloaded artifacts in `output/` to reuse them. The video examples below
+render from source time **0 seconds** through the end of the recording, keeping
+the rendered-video timeline aligned with the original footage.
+
 ```text
 src/
 ├── pipelines/
@@ -149,15 +155,14 @@ normalized_files = normalize_2d(tracking, metadata, Path("output"))
 
 ## Render a top-down tactical video
 
-After exporting normalized tracking, render video time 10:00–10:10 with:
+After exporting normalized tracking, render the full recording from 0 seconds:
 
 ```bash
 .venv/bin/python -m src.pipelines.03_render_2d_tactical_video \
   --tracking output/tracking_normalized_2d.csv \
   --metadata output/tracking_normalized_2d.metadata.json \
   --output-dir output \
-  --start-seconds 600 \
-  --duration-seconds 10
+  --start-seconds 0
 ```
 
 Step 03 writes `output/tactical_2d_tracking.mp4`. FFmpeg must be installed on
@@ -208,14 +213,13 @@ video_path = render_video(
     tracking=Path("output/tracking_normalized_2d.csv"),
     metadata=Path("output/tracking_normalized_2d.metadata.json"),
     output_dir=Path("output"),
-    start_seconds=600,
-    duration_seconds=10,
+    start_seconds=0,
 )
 ```
 
 ## Warp original footage into a bird's-eye video
 
-Render ten seconds around the approximate first kickoff:
+Render the full recording from 0 seconds:
 
 ```bash
 .venv/bin/python -m src.pipelines.04_render_birdseye_tactical_video \
@@ -223,8 +227,7 @@ Render ten seconds around the approximate first kickoff:
   --homography data/tactical/BAR-ATH_tactical_homography.csv \
   --metadata data/tactical/BAR-ATH_tactical_atd.xml \
   --output-dir output \
-  --start-seconds 447.44 \
-  --duration-seconds 10
+  --start-seconds 0
 ```
 
 Step 04 writes `output/tactical_birdseye.mp4`. Its metadata input is the original
@@ -267,8 +270,7 @@ video_path = render_birdseye(
     homography=Path("data/tactical/BAR-ATH_tactical_homography.csv"),
     metadata=Path("data/tactical/BAR-ATH_tactical_atd.xml"),
     output_dir=Path("output"),
-    start_seconds=447.44,
-    duration_seconds=10,
+    start_seconds=0,
 )
 ```
 
