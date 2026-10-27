@@ -35,4 +35,5 @@ venv/
 data/
 
 # Generated tracking exports
-/output/
+/output/*
+!/output/.gitkeep
