@@ -64,6 +64,7 @@ overwritten, so use a fresh `--output-dir` for a rerun.
 | `06_score_submission` | Any submission CSV and a ground-truth CSV | `<submission>.scores.json` with the official metrics |
 | `07_flag_impossible_trajectories` | Normalized CSV and its metadata JSON | `tracking_trajectory_flags.csv` and metadata JSON |
 | `08_assess_identity_continuity` | Normalized CSV, metadata, and step 07 reports | `tracking_gap_continuity.csv` and metadata JSON |
+| `09_possession_inference` | Tactical ATD and XML | Experimental submission CSV and execution metadata JSON |
 
 The [pipeline guide](src/pipelines/README.md) has the full arguments, CSV
 schema, coordinate conventions and Python APIs.
@@ -227,3 +228,23 @@ node --test tests/frontend/web/*.test.mjs
 Some legacy tests import removed exploratory modules, so a bare `python -m pytest`
 fails to collect; the commands above cover the current code. Video tests need
 FFmpeg, and HTTP tests need permission to bind local ports.
+
+### Experimental possession foundation
+
+Pipeline 09 adds `nearest-continuity`: nearest-player team evidence with bounded
+same-team missing-evidence gaps (default 25 frames). It preserves observed team
+changes, resets at halftime, and writes all 199,319 tactical frames. Unknown
+evidence and frames outside gameplay are X; no D inference is implemented.
+It is not a validated improvement over Pipeline 05.
+
+```bash
+python -m src.pipelines.09_possession_inference \
+  --tracking data/tactical/BAR-ATH_tactical_atd.txt \
+  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
+  --strategy nearest-continuity --max-gap-frames 25 \
+  --output-dir output/possession-09
+```
+
+See the [Pipeline 09 contract and reproduction commands](src/pipelines/README.md#experimental-possession-inference)
+for outputs, validation, public scoring and limitations. Use a fresh output
+directory for each run and do not tune against the public ground truth.

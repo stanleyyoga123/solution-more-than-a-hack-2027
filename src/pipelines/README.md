@@ -431,3 +431,68 @@ Run the maintained pipeline and export/logging checks:
 
 The legacy `tests/src/utilities/test_utility.py` references a removed exploratory
 module and is excluded from these checks.
+
+## Experimental possession inference
+
+Step 09 is a small experimental foundation, independent of steps 02 and 05.
+It reads raw tactical ATD and matching EPTS XML through the shared readers.
+Source ATD IDs are one-based video frames; the reader subtracts one. Do not
+supply broadcast data or Smart Tagging IdFrame counters.
+
+```bash
+python -m src.pipelines.09_possession_inference \
+  --tracking data/tactical/BAR-ATH_tactical_atd.txt \
+  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
+  --strategy nearest-continuity \
+  --max-gap-frames 25 \
+  --output-dir output/possession-09
+
+python -m src.pipelines.06_score_submission \
+  --submission output/possession-09/possession_inference.csv \
+  --ground-truth path/to/BAR-ATH_possession_gt_public.csv \
+  --output-dir output/possession-09
+```
+
+The CSV always has columns `frame,label` and 199,319 rows, frames 0–199318.
+The published inclusive gameplay halves are 11185–90651 and 110808–190197
+([official constants](https://github.com/metrica-sports/more-than-a-hack-2027/blob/main/games.py)).
+All other frames are `X`. Each half is processed independently.
+
+`nearest-continuity` uses the same metre-scaled nearest-player calculation and
+slot-order distance ties as step 05; the first XML team is H. Its small evidence
+function stays local because step 05 is frozen. Missing ball positions or no
+usable player distances yield unknown evidence. A complete unknown run is filled
+only when its length is at most `--max-gap-frames` (default 25, one second at
+25 FPS) and both observed endpoints have the same team within the same half.
+Zero disables filling. Longer, unbounded, or conflicting gaps remain `X`.
+Observed H/A changes are preserved immediately; there is no majority smoothing.
+This is a minimal new policy, not migration of the research E1–E4 implementations.
+
+Outputs are `possession_inference.csv` and `possession_inference.metadata.json`.
+The sidecar records strategy/version, parameters, absolute input references,
+execution start/time/runtime versions, team mapping, pitch dimensions, gameplay
+bounds, processed counts, filled frames and H/A/D/X occupancy. Repeated runs have
+identical CSV bytes; execution timestamps and durations intentionally vary.
+Existing files and symlinks are refused; failure cleans up the staged pair.
+CLI logging/progress goes to stderr and published paths to stdout.
+
+There is no dead-ball evidence: D occupancy is always zero. Nearest-player
+identity is only a proxy for control, and short same-team gaps can contain unseen
+turnovers or stoppages. X is an abstention, not a dead-ball prediction. There is
+no validated performance improvement over step 05, and no claim about private
+full-match performance. Parameters must not be tuned against the public sample.
+Report Pipeline 06's `n_pred_spells` as a public-scored-window count, separately
+from full-match frame occupancy.
+
+Reproduce synthetic checks without licensed assets:
+
+```bash
+python -m pytest tests/src/pipelines/09_possession_inference
+python -m black --check src/pipelines/09_possession_inference \
+  tests/src/pipelines/09_possession_inference
+```
+
+The local official validator is `src.utilities.possession_metrics.validate_submission`;
+pass the loaded submission table and expected row count 199319. Pipeline 06
+also validates before scoring. Licensed inputs and all generated artifacts stay
+in ignored `data/` and `output/` directories.
