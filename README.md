@@ -16,8 +16,6 @@ The repository has two parts:
 - **A local viewer** that plays the camera footage, a top-down pitch map and a
   bird's-eye warp of the footage side by side on one timeline.
 
-![Frontend showing the camera overlay, normalized pitch map, and labeled bird's-eye footage](docs/images/frontend.jpg)
-
 ## Setup
 
 Requirements:
@@ -46,11 +44,6 @@ data/tactical/
 
 Match assets and generated outputs are excluded from Git. Tactical and broadcast
 recordings have separate timelines; never mix their frame numbers.
-
-Pre-generated exports and videos are in this
-[Google Drive folder](https://drive.google.com/drive/folders/1BuxSs5RT_My3yr1fbt8TtAzbFK5tiay5).
-Place them under `output/` to reuse them; filenames are listed in the pipeline
-READMEs.
 
 ## Pipelines
 
@@ -158,6 +151,29 @@ flowchart TD
 
 Steps 05, 09, 10, 11 and 12 do not depend on the tracking exports or quality reports.
 
+## Reproduce the submission
+
+The submitted possession file comes from
+[step 12](src/pipelines/12_possession_touch/README.md). With the organisers'
+tactical files in `data/tactical/`:
+
+```bash
+uv sync --frozen
+source .venv/bin/activate
+
+python -m src.pipelines.12_possession_touch \
+  --tracking data/tactical/BAR-ATH_tactical_atd.txt \
+  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
+  --smart-tagging data/tactical/BAR-ATH_tactical_smart_tagging.xml \
+  --output-dir output/submission
+```
+
+The run writes `output/submission/possession_touch.csv`. Copy it to
+`<team_name>.csv` before uploading, and check it with the organisers'
+`evaluation/validate_submission.py`. The [technical document](docs/technical-document.md)
+covers the method, the assets used, the limitations and the SHA-256 the file
+should have.
+
 ## Viewer
 
 Generate the required exports with [step 01](src/pipelines/01_populate_pixels/README.md)
@@ -205,14 +221,9 @@ Black is the Python formatter: `python -m black <paths>` to format and
 `python -m black --check <paths>` to check.
 
 ```bash
-python -m pytest tests/src/pipelines \
-  tests/src/utilities/test_pipeline_exports.py \
-  tests/src/utilities/test_pipeline_logging.py \
-  tests/frontend -q
+python -m pytest -q
 
 node --test tests/frontend/web/*.test.mjs
 ```
 
-Some legacy tests import removed exploratory modules, so a bare `python -m pytest`
-fails to collect; the commands above cover the current code. Video tests need
-FFmpeg, and HTTP tests need permission to bind local ports.
+Video tests need FFmpeg, and HTTP tests need permission to bind local ports.
