@@ -18,7 +18,7 @@ If that port is already in use, run `python -m frontend --port 8766` and open
 
 The defaults use:
 
-- `data/tactical/BAR-ATH_tactical-002.mp4`
+- `data/tactical/BAR-ATH_tactical-001.mp4`
 - `output/tracking_pixels.csv`
 - `output/tracking_normalized_2d.csv`
 - `output/tracking_normalized_2d.metadata.json`

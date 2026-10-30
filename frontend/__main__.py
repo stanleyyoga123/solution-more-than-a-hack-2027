@@ -11,7 +11,7 @@ from src.utilities.pipeline_logging import configure_console_logging
 def main() -> None:
     parser = argparse.ArgumentParser(description="Compare camera and pitch tracking.")
     parser.add_argument(
-        "--video", type=Path, default=Path("data/tactical/BAR-ATH_tactical-002.mp4")
+        "--video", type=Path, default=Path("data/tactical/BAR-ATH_tactical-001.mp4")
     )
     parser.add_argument(
         "--pixels", type=Path, default=Path("output/tracking_pixels.csv")

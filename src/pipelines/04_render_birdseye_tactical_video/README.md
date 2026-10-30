@@ -8,7 +8,7 @@ Render the full recording from 0 seconds:
 
 ```bash
 .venv/bin/python -m src.pipelines.04_render_birdseye_tactical_video \
-  --video data/tactical/BAR-ATH_tactical-002.mp4 \
+  --video data/tactical/BAR-ATH_tactical-001.mp4 \
   --homography data/tactical/BAR-ATH_tactical_homography.csv \
   --metadata data/tactical/BAR-ATH_tactical_atd.xml \
   --output-dir output \
@@ -56,7 +56,7 @@ render_birdseye = import_module(
     "src.pipelines.04_render_birdseye_tactical_video"
 ).run_pipeline
 video_path = render_birdseye(
-    video=Path("data/tactical/BAR-ATH_tactical-002.mp4"),
+    video=Path("data/tactical/BAR-ATH_tactical-001.mp4"),
     homography=Path("data/tactical/BAR-ATH_tactical_homography.csv"),
     metadata=Path("data/tactical/BAR-ATH_tactical_atd.xml"),
     output_dir=Path("output"),
