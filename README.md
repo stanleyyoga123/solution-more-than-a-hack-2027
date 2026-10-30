@@ -62,6 +62,10 @@ overwritten, so use a fresh `--output-dir` for a rerun.
 See the [pipeline index](src/pipelines/README.md) for links to each step’s
 README, including commands, schemas, parameters and interpretation.
 
+Use the [experiment registry](experiments/README.md) to record existing possession
+submissions, provenance and official scores in Git, then generate a shared
+comparison report without rerunning pipelines.
+
 ### Pipeline dependencies
 
 Arrows show files consumed or produced; run each pipeline separately. The two
