@@ -20,6 +20,7 @@ the viewer and repository-wide checks.
 | [`09_possession_inference`](09_possession_inference/README.md) | Tactical ATD and XML | `possession_inference.csv` submission and metadata JSON |
 | [`10_possession_control`](10_possession_control/README.md) | Tactical ATD and EPTS XML | Standalone control-confirmation submission (`submission.csv`) and metadata JSON |
 | [`11_possession_deadball`](11_possession_deadball/README.md) | Tactical ATD, EPTS XML and Smart Tagging XML | Ownership and dead-ball submission (`possession_deadball.csv`) and metadata JSON |
+| [`12_possession_touch`](12_possession_touch/README.md) | Tactical ATD, EPTS XML and Smart Tagging XML | Touch-based ownership and dead-ball submission (`possession_touch.csv`) and metadata JSON |
 
 ## Running pipelines
 
