@@ -1,0 +1,1 @@
+"""Possession control configuration."""

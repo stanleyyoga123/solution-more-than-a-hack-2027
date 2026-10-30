@@ -110,7 +110,7 @@ flowchart TD
 Step 02 reads the raw ATD independently of step 01. Step 04 also reads original
 assets directly. Step 08 needs both step 02's export and step 07's reports.
 
-**Possession inference and scoring.** Steps 05 and 09 each write a submission CSV
+**Possession inference and scoring.** Steps 05, 09 and 10 each write a submission CSV
 and a matching `.metadata.json` sidecar. Step 06 consumes only the chosen
 submission CSV and the ground-truth CSV; score each submission in a separate run.
 The public ground truth is supplied separately by the organisers.
@@ -124,24 +124,28 @@ flowchart TD
 
     p05["05_possession_baseline"]
     p09["09_possession_inference"]
+    p10["10_possession_control"]
     p06["06_score_submission"]
 
     baseline("possession_baseline.csv + metadata")
     inference("possession_inference.csv + metadata")
+    control("submission.csv + metadata")
     scores("{submission_stem}.scores.json")
 
-    atd --> p05 & p09
-    xml --> p05 & p09
+    atd --> p05 & p09 & p10
+    xml --> p05 & p09 & p10
     p05 --> baseline
     p09 --> inference
+    p10 --> control
     baseline -->|"CSV only"| p06
     inference -->|"CSV only"| p06
+    control -->|"CSV only"| p06
     other --> p06
     truth --> p06
     p06 --> scores
 ```
 
-Steps 05 and 09 do not depend on the tracking exports or quality reports.
+Steps 05, 09 and 10 do not depend on the tracking exports or quality reports.
 
 ## Viewer
 

@@ -1,0 +1,53 @@
+<main>
+  <Metadata>
+    <GlobalConfig><FrameRate>10</FrameRate></GlobalConfig>
+    <Sessions>
+      <Session id="match"><FieldSize><Width>100</Width><Height>60</Height></FieldSize></Session>
+    </Sessions>
+    <Teams>
+      <Team id="home"><Name>Home</Name></Team>
+      <Team id="away"><Name>Away</Name></Team>
+    </Teams>
+    <Players>
+      <Player id="42" teamId="away"><Name>Track 42</Name><ShirtNumber>9</ShirtNumber></Player>
+      <Player id="7" teamId="home"><Name>Track 7</Name><ShirtNumber>10</ShirtNumber></Player>
+    </Players>
+    <Devices>
+      <Device id="tracking"><Sensors><Sensor id="position"><Channels>
+        <Channel id="x"><Name>position_x</Name><Unit>normalized</Unit></Channel>
+        <Channel id="y"><Name>position_y</Name><Unit>normalized</Unit></Channel>
+        <Channel id="s"><Name>speed</Name><Unit>kph</Unit></Channel>
+      </Channels></Sensor></Sensors></Device>
+    </Devices>
+    <PlayerChannels>
+      <PlayerChannel channelId="x" id="player7_x" playerId="7" />
+      <PlayerChannel channelId="y" id="player7_y" playerId="7" />
+      <PlayerChannel channelId="s" id="player7_speed" playerId="7" />
+      <PlayerChannel channelId="x" id="player42_x" playerId="42" />
+      <PlayerChannel channelId="y" id="player42_y" playerId="42" />
+      <PlayerChannel channelId="s" id="player42_speed" playerId="42" />
+    </PlayerChannels>
+  </Metadata>
+  <DataFormatSpecifications>
+    <DataFormatSpecification startFrame="1" endFrame="100" separator=":">
+      <StringRegister name="frameCount" />
+      <SplitRegister separator=";">
+        <SplitRegister separator=",">
+          <PlayerChannelRef playerChannelId="player7_x" />
+          <PlayerChannelRef playerChannelId="player7_y" />
+          <PlayerChannelRef playerChannelId="player7_speed" />
+        </SplitRegister>
+        <SplitRegister separator=",">
+          <PlayerChannelRef playerChannelId="player42_x" />
+          <PlayerChannelRef playerChannelId="player42_y" />
+          <PlayerChannelRef playerChannelId="player42_speed" />
+        </SplitRegister>
+      </SplitRegister>
+      <SplitRegister separator=",">
+        <BallChannelRef channelId="x" />
+        <BallChannelRef channelId="y" />
+        <BallChannelRef channelId="s" />
+      </SplitRegister>
+    </DataFormatSpecification>
+  </DataFormatSpecifications>
+</main>
