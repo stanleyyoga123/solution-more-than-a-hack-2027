@@ -19,6 +19,7 @@ the viewer and repository-wide checks.
 | [`08_assess_identity_continuity`](08_assess_identity_continuity/README.md) | Normalized CSV, metadata, and step 07 reports | `tracking_gap_continuity.csv` and metadata JSON |
 | [`09_possession_inference`](09_possession_inference/README.md) | Tactical ATD and XML | `possession_inference.csv` submission and metadata JSON |
 | [`10_possession_control`](10_possession_control/README.md) | Tactical ATD and EPTS XML | Standalone control-confirmation submission (`submission.csv`) and metadata JSON |
+| [`11_possession_deadball`](11_possession_deadball/README.md) | Tactical ATD, EPTS XML and Smart Tagging XML | Ownership and dead-ball submission (`possession_deadball.csv`) and metadata JSON |
 
 ## Running pipelines
 
