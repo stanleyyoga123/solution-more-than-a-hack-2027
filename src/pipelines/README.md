@@ -18,6 +18,7 @@ the viewer and repository-wide checks.
 | [`07_flag_impossible_trajectories`](07_flag_impossible_trajectories/README.md) | Normalized CSV and its metadata JSON | `tracking_trajectory_flags.csv` and metadata JSON |
 | [`08_assess_identity_continuity`](08_assess_identity_continuity/README.md) | Normalized CSV, metadata, and step 07 reports | `tracking_gap_continuity.csv` and metadata JSON |
 | [`09_possession_inference`](09_possession_inference/README.md) | Tactical ATD and XML | `possession_inference.csv` submission and metadata JSON |
+| [`10_possession_control`](10_possession_control/README.md) | Tactical ATD and EPTS XML | Standalone control-confirmation submission (`submission.csv`) and metadata JSON |
 
 ## Running pipelines
 

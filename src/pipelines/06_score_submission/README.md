@@ -5,7 +5,8 @@
 Run commands from the repository root with the project environment active.
 Step 06 reads a `frame,label` submission CSV and a ground-truth CSV. The
 submission can come from [step 05](../05_possession_baseline/README.md),
-[step 09](../09_possession_inference/README.md), or another method. It does
+[step 09](../09_possession_inference/README.md),
+[step 10](../10_possession_control/README.md), or another method. It does
 not consume submission metadata or run inference automatically.
 
 ```bash
