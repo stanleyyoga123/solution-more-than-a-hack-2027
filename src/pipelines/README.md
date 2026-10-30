@@ -8,6 +8,10 @@ from the normalized tracking export.
 Each numbered package owns one pipeline; shared readers and export helpers live in
 `src/utilities/`. Production imports stay inside `src/`.
 
+See the [pipeline dependency diagrams](../../README.md#pipeline-dependencies)
+for all nine steps, their input files, and the generated artifacts passed between
+them.
+
 Generated data is available in the
 [Google Drive folder](https://drive.google.com/drive/folders/1BuxSs5RT_My3yr1fbt8TtAzbFK5tiay5).
 Place downloaded artifacts in `output/` to reuse them. The video examples below

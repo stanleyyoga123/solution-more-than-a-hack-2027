@@ -69,6 +69,87 @@ overwritten, so use a fresh `--output-dir` for a rerun.
 The [pipeline guide](src/pipelines/README.md) has the full arguments, CSV
 schema, coordinate conventions and Python APIs.
 
+### Pipeline dependencies
+
+Arrows show files consumed or produced; run each pipeline separately. The two
+diagrams share the same tactical ATD and XML inputs under `data/tactical/`.
+Generated files go under `output/` by default (or the chosen `--output-dir`).
+Rounded boxes are files; rectangular boxes are pipelines.
+
+**Tracking exports, videos and quality reports.** Each tracking CSV box includes
+its matching `.metadata.json` sidecar; downstream steps consume both files.
+
+```mermaid
+flowchart TD
+    atd("BAR-ATH_tactical_atd.txt")
+    xml("BAR-ATH_tactical_atd.xml")
+    homography("BAR-ATH_tactical_homography.csv")
+    video("BAR-ATH_tactical-002.mp4")
+
+    p01["01_populate_pixels"]
+    p02["02_normalize_2d"]
+    p03["03_render_2d_tactical_video"]
+    p04["04_render_birdseye_tactical_video"]
+    p07["07_flag_impossible_trajectories"]
+    p08["08_assess_identity_continuity"]
+
+    pixels("tracking_pixels.csv + metadata")
+    normalized("tracking_normalized_2d.csv + metadata")
+    minimap("tactical_2d_tracking.mp4")
+    birdseye("tactical_birdseye.mp4")
+    flags("tracking_trajectory_flags.csv + metadata")
+    gaps("tracking_gap_continuity.csv + metadata")
+
+    atd --> p01 & p02
+    xml --> p01 & p02 & p04
+    homography --> p01 & p04
+    video --> p04
+    p01 --> pixels
+    p02 --> normalized
+    normalized --> p03 & p07 & p08
+    p03 --> minimap
+    p04 --> birdseye
+    p07 --> flags
+    flags --> p08
+    p08 --> gaps
+```
+
+Step 02 reads the raw ATD independently of step 01. Step 04 also reads original
+assets directly. Step 08 needs both step 02's export and step 07's reports.
+
+**Possession inference and scoring.** Steps 05 and 09 each write a submission CSV
+and a matching `.metadata.json` sidecar. Step 06 consumes only the chosen
+submission CSV and the ground-truth CSV; score each submission in a separate run.
+The public ground truth is supplied separately by the organisers.
+
+```mermaid
+flowchart TD
+    atd("BAR-ATH_tactical_atd.txt")
+    xml("BAR-ATH_tactical_atd.xml")
+    truth("BAR-ATH_possession_gt_public.csv")
+    other("Other submission CSV")
+
+    p05["05_possession_baseline"]
+    p09["09_possession_inference"]
+    p06["06_score_submission"]
+
+    baseline("possession_baseline.csv + metadata")
+    inference("possession_inference.csv + metadata")
+    scores("{submission_stem}.scores.json")
+
+    atd --> p05 & p09
+    xml --> p05 & p09
+    p05 --> baseline
+    p09 --> inference
+    baseline -->|"CSV only"| p06
+    inference -->|"CSV only"| p06
+    other --> p06
+    truth --> p06
+    p06 --> scores
+```
+
+Steps 05 and 09 do not depend on the tracking exports or quality reports.
+
 ### Make and score a submission
 
 Step 05 writes the organisers' reference baseline: each frame goes to the team
