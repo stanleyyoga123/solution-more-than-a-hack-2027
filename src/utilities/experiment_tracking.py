@@ -5,9 +5,11 @@ recording operation, not the historical execution that produced its inputs.
 """
 
 from collections.abc import Mapping
+import csv
 from datetime import datetime, timezone
 import hashlib
 from importlib.metadata import PackageNotFoundError, version
+import io
 import json
 import logging
 import os
@@ -18,6 +20,7 @@ import subprocess
 import tempfile
 from time import perf_counter
 from typing import Any
+from urllib.parse import quote
 
 LOGGER = logging.getLogger(__name__)
 SCHEMA_VERSION = 1
@@ -317,8 +320,6 @@ def _group_key(document: dict[str, Any]) -> str:
 
 
 def _report_row(path: Path, document: dict[str, Any], reports: Path) -> dict[str, Any]:
-    from urllib.parse import quote
-
     identity = document["identity"]
     evaluation = document["evaluation"]
     metrics = evaluation["metrics"]
@@ -360,9 +361,6 @@ def _report_row(path: Path, document: dict[str, Any], reports: Path) -> dict[str
 
 def compare_experiments(registry: Path) -> Path:
     """Regenerate the stable CSV report without ranking experiments."""
-    import csv
-    import io
-
     started = perf_counter()
     LOGGER.info("Loading experiment manifests: %s", registry / "runs")
     documents = []
@@ -424,8 +422,6 @@ def compare_experiments(registry: Path) -> Path:
 
 def preview_registry(path: Path) -> str:
     """Render selected CSV columns, grouped by evaluation identity, for stdout."""
-    import csv
-
     with path.open(encoding="utf-8", newline="") as source:
         rows = list(csv.DictReader(source))
     if not rows:
