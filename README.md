@@ -47,6 +47,11 @@ data/tactical/
 Match assets and generated outputs are excluded from Git. Tactical and broadcast
 recordings have separate timelines; never mix their frame numbers.
 
+Pre-generated exports and videos are in this
+[Google Drive folder](https://drive.google.com/drive/folders/1BuxSs5RT_My3yr1fbt8TtAzbFK5tiay5).
+Place them under `output/` to reuse them; filenames are listed in the pipeline
+READMEs.
+
 ## Pipelines
 
 Run each step on its own with `python -m src.pipelines.<step>`. Steps never call
@@ -54,20 +59,8 @@ each other; shared code lives in `src/utilities/`. Every CLI has `--help`, logs
 to stderr and prints its output paths to stdout. Existing outputs are never
 overwritten, so use a fresh `--output-dir` for a rerun.
 
-| Step | Input | Output |
-| --- | --- | --- |
-| `01_populate_pixels` | ATD text, XML, homography CSV | `tracking_pixels.csv` and metadata JSON |
-| `02_normalize_2d` | ATD text and XML | `tracking_normalized_2d.csv` and metadata JSON |
-| `03_render_2d_tactical_video` | Step 02 CSV and metadata JSON | `tactical_2d_tracking.mp4`, an animated pitch map |
-| `04_render_birdseye_tactical_video` | Original video, homography CSV, XML | `tactical_birdseye.mp4`, warped footage |
-| `05_possession_baseline` | ATD text and XML | `possession_baseline.csv` submission and metadata JSON |
-| `06_score_submission` | Any submission CSV and a ground-truth CSV | `<submission>.scores.json` with the official metrics |
-| `07_flag_impossible_trajectories` | Normalized CSV and its metadata JSON | `tracking_trajectory_flags.csv` and metadata JSON |
-| `08_assess_identity_continuity` | Normalized CSV, metadata, and step 07 reports | `tracking_gap_continuity.csv` and metadata JSON |
-| `09_possession_inference` | Tactical ATD and XML | Experimental submission CSV and execution metadata JSON |
-
-The [pipeline guide](src/pipelines/README.md) has the full arguments, CSV
-schema, coordinate conventions and Python APIs.
+See the [pipeline index](src/pipelines/README.md) for links to each step’s
+README, including commands, schemas, parameters and interpretation.
 
 ### Pipeline dependencies
 
@@ -150,119 +143,18 @@ flowchart TD
 
 Steps 05 and 09 do not depend on the tracking exports or quality reports.
 
-### Make and score a submission
-
-Step 05 writes the organisers' reference baseline: each frame goes to the team
-of the tracked player nearest the ball, `D` where the ball is missing, then a
-centred majority vote over ±`--window` frames (default 50). Step 06 checks any
-`frame,label` file against the competition format and scores it with
-`src/utilities/possession_metrics.py`, an unchanged copy of the official scorer.
-
-```bash
-python -m src.pipelines.05_possession_baseline \
-  --tracking data/tactical/BAR-ATH_tactical_atd.txt \
-  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
-  --output-dir output
-
-python -m src.pipelines.06_score_submission \
-  --submission output/possession_baseline.csv \
-  --ground-truth path/to/BAR-ATH_possession_gt_public.csv \
-  --output-dir output
-```
-
-The ground truth is `evaluation/gt/BAR-ATH_possession_gt_public.csv` in the
-organisers' repository. It covers 5 minutes and only 17 possessions: use it to
-check a pipeline, not to tune one. Distances use the metadata's 105 × 68 m
-pitch, not the organisers' measured 105.3 × 68 m, so a few frames differ from
-their `baseline_smooth50.csv`; the public-window scores are the same.
-
-### Tracking quality and gaps
-
-Step 07 flags suspicious player speed and acceleration, and suspicious ball
-speed. Step 08 assesses gaps within each tracking slot using endpoint motion and
-step 07's flags. Run these after step 02:
-
-```bash
-python -m src.pipelines.07_flag_impossible_trajectories \
-  --tracking output/tracking_normalized_2d.csv \
-  --metadata output/tracking_normalized_2d.metadata.json \
-  --output-dir output
-
-python -m src.pipelines.08_assess_identity_continuity \
-  --tracking output/tracking_normalized_2d.csv \
-  --metadata output/tracking_normalized_2d.metadata.json \
-  --flags output/tracking_trajectory_flags.csv \
-  --flags-metadata output/tracking_trajectory_flags.metadata.json \
-  --output-dir output
-```
-
-These steps write separate diagnostic reports; they preserve positions, nulls
-and entity IDs. A `plausible` gap means its motion is consistent with continuity,
-not that a player's identity is verified. Longer gaps remain uncertain by default
-(maximum two seconds), and no positions are filled. See the
-[quality pipeline details](src/pipelines/README.md#flag-suspicious-trajectories)
-for thresholds, report columns and interpretation.
-
-Restart the frontend after generating the reports to load them into its tracking
-quality panel. Default report paths are detected independently; use
-`--trajectory-flags` and `--gap-continuity` for custom locations. See the
-[frontend review controls](frontend/README.md#review-tracking-quality).
-
-### Prepare the viewer
-
-The viewer needs the pixel and normalized exports. The bird's-eye footage is
-optional:
-
-```bash
-python -m src.pipelines.01_populate_pixels \
-  --tracking data/tactical/BAR-ATH_tactical_atd.txt \
-  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
-  --homography data/tactical/BAR-ATH_tactical_homography.csv \
-  --output-dir output
-
-python -m src.pipelines.02_normalize_2d \
-  --tracking data/tactical/BAR-ATH_tactical_atd.txt \
-  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
-  --output-dir output
-
-python -m src.pipelines.04_render_birdseye_tactical_video \
-  --video data/tactical/BAR-ATH_tactical-002.mp4 \
-  --homography data/tactical/BAR-ATH_tactical_homography.csv \
-  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
-  --output-dir output
-```
-
-Each full tactical CSV is several hundred megabytes. The bird's-eye video uses
-12 pixels per metre (1260 × 816 for a 105 × 68 m pitch); areas outside the
-camera image and frames without valid calibration are black. Renders start
-at source time zero by default. The warp assumes a flat pitch, so bodies and
-airborne objects can appear stretched; the rendered video has no audio.
-
-Pre-generated exports and videos are in this
-[Google Drive folder](https://drive.google.com/drive/folders/1BuxSs5RT_My3yr1fbt8TtAzbFK5tiay5).
-Place them under `output/` with the filenames above to skip these steps.
-
 ## Viewer
 
+Generate the required exports with [step 01](src/pipelines/01_populate_pixels/README.md)
+and [step 02](src/pipelines/02_normalize_2d/README.md), then start the local viewer:
+
 ```bash
-python -m frontend --port 8766
+python -m frontend
 ```
 
-Open [http://127.0.0.1:8766](http://127.0.0.1:8766); without `--port` the
-default is 8765. The server binds only to the local machine. The first launch
-indexes the CSVs under `output/frontend/`, and later launches reuse the index.
-The viewer loads `output/tactical_birdseye.mp4` when present; the camera and
-pitch views work without it.
-
-Controls cover play and pause, speed, seeking, frame-number entry, single-frame
-steps (arrow keys), a jump to the first kickoff, and separate label and overlay
-toggles for each view. The [frontend guide](frontend/README.md) covers custom
-paths and trimmed bird's-eye clips. The kickoff shortcut is approximately
-frame 11186 (447.44 seconds). Stop the server with `Ctrl+C`.
-
-When step 07/08 reports are available, the tracking-quality panel lets you
-filter by entity or gap status, navigate motion episodes and gap boundaries,
-and highlight the selected entity across the views.
+Open [http://127.0.0.1:8765](http://127.0.0.1:8765). See the
+[frontend guide](frontend/README.md) for optional videos and quality reports,
+custom paths, ports and playback controls.
 
 ## Data conventions
 
@@ -309,23 +201,3 @@ node --test tests/frontend/web/*.test.mjs
 Some legacy tests import removed exploratory modules, so a bare `python -m pytest`
 fails to collect; the commands above cover the current code. Video tests need
 FFmpeg, and HTTP tests need permission to bind local ports.
-
-### Experimental possession foundation
-
-Pipeline 09 adds `nearest-continuity`: nearest-player team evidence with bounded
-same-team missing-evidence gaps (default 25 frames). It preserves observed team
-changes, resets at halftime, and writes all 199,319 tactical frames. Unknown
-evidence and frames outside gameplay are X; no D inference is implemented.
-It is not a validated improvement over Pipeline 05.
-
-```bash
-python -m src.pipelines.09_possession_inference \
-  --tracking data/tactical/BAR-ATH_tactical_atd.txt \
-  --metadata data/tactical/BAR-ATH_tactical_atd.xml \
-  --strategy nearest-continuity --max-gap-frames 25 \
-  --output-dir output/possession-09
-```
-
-See the [Pipeline 09 contract and reproduction commands](src/pipelines/README.md#experimental-possession-inference)
-for outputs, validation, public scoring and limitations. Use a fresh output
-directory for each run and do not tune against the public ground truth.

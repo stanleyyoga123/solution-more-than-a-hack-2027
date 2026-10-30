@@ -1,11 +1,17 @@
 # Experimental Possession Inference
 
+[All pipelines](../README.md) · [Dependency diagrams](../../../README.md#pipeline-dependencies)
+
 ## Description
 
-Step 09 is a small experimental foundation, independent of steps 02 and 05.
+Step 09 is a small experimental foundation, requiring no exports from steps 01–08.
 It reads raw tactical ATD and matching EPTS XML through the shared readers.
 Source ATD IDs are one-based video frames; the reader subtracts one. Do not
 supply broadcast data or Smart Tagging IdFrame counters.
+
+Run commands from the repository root with the project environment active.
+The CLI requires `--tracking`, `--metadata` and `--strategy nearest-continuity`.
+`--output-dir` defaults to `output/`; use a fresh directory for each inference run.
 
 ```bash
 python -m src.pipelines.09_possession_inference \
@@ -44,6 +50,10 @@ identical CSV bytes; execution timestamps and durations intentionally vary.
 Existing files and symlinks are refused; failure cleans up the staged pair.
 CLI logging/progress goes to stderr and published paths to stdout.
 
+The [step 06](../06_score_submission/README.md) command above validates and
+scores the CSV, writing `possession_inference.scores.json` in the same directory.
+It does not consume the metadata sidecar.
+
 There is no dead-ball evidence: D occupancy is always zero. Nearest-player
 identity is only a proxy for control, and short same-team gaps can contain unseen
 turnovers or stoppages. X is an abstention, not a dead-ball prediction. There is
@@ -64,7 +74,6 @@ The local official validator is `src.utilities.possession_metrics.validate_submi
 pass the loaded submission table and expected row count 199319. Pipeline 06
 also validates before scoring. Licensed inputs and all generated artifacts stay
 in ignored `data/` and `output/` directories.
-
 
 ## How It Works
 
@@ -126,7 +135,7 @@ A longer gap remains `X` even if its endpoints agree. Observed `H` and `A` label
 | Temporal treatment | Centered majority vote (default ±50 frames) | Fill only short `X` runs with matching observed endpoints |
 | Suppresses isolated observed H↔A switches | Can, through smoothing | **No** — observed labels remain unchanged |
 | Dead-ball predictions | Can produce `D`, though imperfectly | **Never produces `D`** |
-| Halftime | Kept separate | Kept separate |
+| Halftime | No explicit reset of the vote window | Halves processed separately |
 
 For example, Pipeline 09 leaves `H H H A H H H` unchanged, even if the isolated `A` is a proximity error. Pipeline 05's smoothing can suppress that kind of brief switch.
 

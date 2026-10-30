@@ -26,10 +26,12 @@ The defaults use:
 - `output/tracking_trajectory_flags.csv`, when present
 - `output/tracking_gap_continuity.csv`, when present
 
-Generate the two CSVs with pipelines 01 and 02 before starting the viewer.
+Generate the two CSVs with [pipeline 01](../src/pipelines/01_populate_pixels/README.md)
+and [pipeline 02](../src/pipelines/02_normalize_2d/README.md) before starting the viewer.
 The viewer does not run pipelines or require the video from pipeline 03.
-Render the bird's-eye footage with pipeline 04 before starting the viewer to
-enable the third view. If its default file is absent, the camera and pitch map
+Render the bird's-eye footage with
+[pipeline 04](../src/pipelines/04_render_birdseye_tactical_video/README.md) before
+starting the viewer to enable the third view. If its default file is absent, the camera and pitch map
 still work and the third card explains that the footage is unavailable.
 Use `python -m frontend --help` to select different input paths or a port.
 All inputs must belong to the same recording and timeline.
@@ -92,8 +94,9 @@ video file itself is unchanged; overlays are drawn only in the browser.
 
 ## Review tracking quality
 
-Generate reports with steps 07 and 08, then restart the viewer. Reports are loaded
-once at startup; the viewer does not run these pipelines. Each default report is
+Generate reports with [step 07](../src/pipelines/07_flag_impossible_trajectories/README.md)
+and [step 08](../src/pipelines/08_assess_identity_continuity/README.md), then restart
+the viewer. Reports are loaded once at startup; the viewer does not run these pipelines. Each default report is
 optional and detected independently. Without reports, video playback and tracking
 overlays continue to work and the quality panel explains what is unavailable.
 An explicitly supplied missing report path is a startup error.

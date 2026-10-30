@@ -38,3 +38,4 @@ venv/
 # Generated tracking exports
 /output/*
 !/output/.gitkeep
+/playground
