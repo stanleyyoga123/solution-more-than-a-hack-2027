@@ -22,21 +22,19 @@ class ControlConfirmation:
         plausible_speed = ~np.isfinite(speed) | (
             speed <= self._policy.control_ball_speed_mps
         )
-        home = (
-            np.isfinite(home_distance)
-            & (home_distance <= self._policy.control_distance_m)
-            & (home_distance + self._policy.control_advantage_m <= away_distance)
-            & plausible_speed
-        )
-        away = (
-            np.isfinite(away_distance)
-            & (away_distance <= self._policy.control_distance_m)
-            & (away_distance + self._policy.control_advantage_m <= home_distance)
-            & plausible_speed
-        )
-        result[home] = 0
-        result[away] = 1
+        result[self._controls(home_distance, away_distance) & plausible_speed] = 0
+        result[self._controls(away_distance, home_distance) & plausible_speed] = 1
         return result
+
+    def _controls(
+        self, own_distance: NDArray[np.float64], opposing_distance: NDArray[np.float64]
+    ) -> NDArray[np.bool_]:
+        """Mark frames where a team is close enough and clearly nearer than the other."""
+        return (
+            np.isfinite(own_distance)
+            & (own_distance <= self._policy.control_distance_m)
+            & (own_distance + self._policy.control_advantage_m <= opposing_distance)
+        )
 
     def predict(self, features: PossessionFeatures) -> NDArray[np.str_]:
         """Backdate confirmed switches and expire ownership after missing evidence."""

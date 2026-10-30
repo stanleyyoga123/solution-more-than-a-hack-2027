@@ -54,10 +54,12 @@ class TrackingEvidenceLoader:
                 if located.any():
                     nearest = int(np.nanargmin(distances))
                     nearest_code[frame] = team_codes[nearest]
-                    if (located & home_slots).any():
-                        home_distance[frame] = distances[located & home_slots].min()
-                    if (located & ~home_slots).any():
-                        away_distance[frame] = distances[located & ~home_slots].min()
+                    home_distance[frame] = np.where(
+                        located & home_slots, distances, np.inf
+                    ).min()
+                    away_distance[frame] = np.where(
+                        located & ~home_slots, distances, np.inf
+                    ).min()
                 previous_ball = ball
                 previous_frame = frame
                 processed += 1
