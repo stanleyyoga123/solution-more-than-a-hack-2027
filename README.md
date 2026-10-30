@@ -38,7 +38,7 @@ Get the match assets from the organisers and place them under `data/`:
 
 ```text
 data/tactical/
-├── BAR-ATH_tactical-002.mp4
+├── BAR-ATH_tactical-001.mp4
 ├── BAR-ATH_tactical_atd.txt
 ├── BAR-ATH_tactical_atd.xml
 └── BAR-ATH_tactical_homography.csv
@@ -77,7 +77,7 @@ flowchart TD
     atd("BAR-ATH_tactical_atd.txt")
     xml("BAR-ATH_tactical_atd.xml")
     homography("BAR-ATH_tactical_homography.csv")
-    video("BAR-ATH_tactical-002.mp4")
+    video("BAR-ATH_tactical-001.mp4")
 
     p01["01_populate_pixels"]
     p02["02_normalize_2d"]
