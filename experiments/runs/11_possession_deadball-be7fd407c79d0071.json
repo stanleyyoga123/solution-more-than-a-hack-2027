@@ -1,0 +1,155 @@
+{
+  "artifacts": {
+    "metadata": {
+      "path": "output/possession-11/possession_deadball.metadata.json",
+      "sha256": "95446e90f1dfdba086131e736173587b8e5da1645caa02e27bf9e06abd4fba05"
+    },
+    "scores": {
+      "path": "output/possession-11/possession_deadball.scores.json",
+      "sha256": "a998b52503a2fa382a59504b5e4c818cbc56af229d8aa4d1213a814efd96ced6"
+    },
+    "submission": {
+      "path": "output/possession-11/possession_deadball.csv",
+      "sha256": "3b893cf7f843bbb271b5ccd19c45db83f9eb421f421285afe11ac730e38d7aee"
+    }
+  },
+  "evaluation": {
+    "dataset_id": null,
+    "ground_truth": {
+      "id": null,
+      "sha256": null
+    },
+    "implementation": {
+      "id": null,
+      "sha256": null,
+      "version": null
+    },
+    "metrics": {
+      "abstention_count": 0,
+      "dead_ball_f1": 0.7210209145693016,
+      "fragmentation": 1.0952380952380953,
+      "graded_frame_count": 7500,
+      "ground_truth_possession_count": 17,
+      "macro_f1": 0.7775258207596417,
+      "mean_possession_duration_s": 13.662222222222221,
+      "predicted_possession_count": 18,
+      "spell_f1_mean": 0.43428571428571433,
+      "transition_f1": {
+        "12": 0.09523809523809525,
+        "25": 0.14285714285714282
+      }
+    },
+    "scope": "unknown",
+    "statistics_scope": "ground_truth_graded_frames"
+  },
+  "experiment": {
+    "description": null,
+    "hypothesis": null,
+    "notes": null,
+    "recorded_at_utc": "2026-10-30T11:14:00.167769+00:00"
+  },
+  "fingerprint": "be7fd407c79d0071552fd174b44949c684d20c95cbed34c49496d708509de545",
+  "identity": {
+    "configuration": {
+      "activity_window_seconds": 3,
+      "control_advantage_m": 0.5,
+      "control_ball_speed_mps": 12,
+      "control_confirmation_seconds": 0.4,
+      "control_distance_m": 2,
+      "graded_halves": [
+        [
+          11185,
+          90651
+        ],
+        [
+          110808,
+          190197
+        ]
+      ],
+      "kickoff_frames": [
+        11185,
+        113742
+      ],
+      "minimum_stoppage_seconds": 3,
+      "out_of_pitch_margin_m": 0.5,
+      "out_of_pitch_window_seconds": 0.4,
+      "set_piece_lead_seconds": 1,
+      "stoppage_enter_mps": 1.1,
+      "stoppage_exit_mps": 1.6
+    },
+    "evaluation": {
+      "dataset_id": null,
+      "ground_truth": {
+        "id": null,
+        "sha256": null
+      },
+      "implementation": {
+        "id": null,
+        "sha256": null,
+        "version": null
+      },
+      "scope": "unknown"
+    },
+    "pipeline": "11_possession_deadball",
+    "recording_git_commit": "62517d1d03e82224f1298f826c783a41248b4e47",
+    "recording_id": null,
+    "strategy": "ownership_with_dead_ball_detection",
+    "strategy_version": 1,
+    "submission_sha256": "3b893cf7f843bbb271b5ccd19c45db83f9eb421f421285afe11ac730e38d7aee"
+  },
+  "prediction_statistics": {
+    "abstention_count": 40462,
+    "frame_count": 199319,
+    "label_counts": {
+      "A": 38186,
+      "D": 67621,
+      "H": 53050,
+      "X": 40462
+    },
+    "mean_possession_duration_s": null,
+    "predicted_possession_count": null,
+    "scope": "full_submission"
+  },
+  "provenance": {
+    "artifact_association": "caller_supplied_not_verified_by_scorer",
+    "execution": {
+      "elapsed_seconds": 7.720092433002719,
+      "git_commit": null,
+      "git_dirty": null,
+      "lockfile_sha256": null,
+      "runtime": {
+        "numpy_version": "2.5.4",
+        "python_version": "3.12.14"
+      },
+      "started_at_utc": "2026-10-30T09:22:09.735825+00:00"
+    },
+    "input_fingerprint_scope": "files_available_at_recording_time",
+    "inputs": {
+      "metadata": {
+        "path": "data/tactical/BAR-ATH_tactical_atd.xml",
+        "sha256": "327e35e32e46a647389b88f883d4f9a2ab931e3e6148aef2fcf8f22b1e93c43a"
+      },
+      "smart_tagging": {
+        "path": "data/tactical/BAR-ATH_tactical_smart_tagging.xml",
+        "sha256": "0594d35e3df01b9c5002372d8615e2e8ef5379ac8f4e84c5ef7a53f4304c9019"
+      },
+      "tracking": {
+        "path": "data/tactical/BAR-ATH_tactical_atd.txt",
+        "sha256": "f130e350d2bfdf734b7e32f072931fccc6d015c1e837d082064875fe0a700431"
+      }
+    },
+    "recording": {
+      "git_commit": "62517d1d03e82224f1298f826c783a41248b4e47",
+      "git_dirty": true,
+      "lockfile_sha256": "a467642be34ffb2dc4f4c655748ee511ccf9664b2f8469cad6c7ae2e218651b0",
+      "runtime": {
+        "numpy_version": "2.5.4",
+        "pandas_version": "3.0.6",
+        "python_version": "3.12.14",
+        "tqdm_version": "4.70.1"
+      }
+    }
+  },
+  "run_id": "11_possession_deadball-be7fd407c79d0071",
+  "schema_version": 1
+}

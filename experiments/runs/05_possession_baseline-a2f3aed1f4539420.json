@@ -1,0 +1,114 @@
+{
+  "artifacts": {
+    "metadata": {
+      "path": "output/possession-05-baseline-20261031/possession_baseline.metadata.json",
+      "sha256": "79892c8350971411d2ec46f980538b432283216f1fc3b1543cb871ca86bdcdfe"
+    },
+    "scores": {
+      "path": "output/possession-05-baseline-20261031/possession_baseline.scores.json",
+      "sha256": "d97a99bf8a8fe10819b8bb4ac95fa85517c19c7388bec0f9bc12bc1bdbee171b"
+    },
+    "submission": {
+      "path": "output/possession-05-baseline-20261031/possession_baseline.csv",
+      "sha256": "b9b729792ec68df32a86eab1d04cbcec697aae2a05befbe312c1f4bdf8e24107"
+    }
+  },
+  "evaluation": {
+    "dataset_id": "BAR-ATH-public-five-minute",
+    "ground_truth": {
+      "id": "BAR-ATH-public",
+      "sha256": "e596a9af9626c623bb94be6fd350e12ee9a75c76a696cfadca3bc01735e92487"
+    },
+    "implementation": {
+      "id": "metrica-possession-metrics",
+      "sha256": "f77cdbfcd85ef23f313de4a97e44afb807c06d97d61177ea0afe57b2d672495d",
+      "version": "3de6b60"
+    },
+    "metrics": {
+      "abstention_count": 0,
+      "dead_ball_f1": 0.32254750898818696,
+      "fragmentation": 1.4285714285714286,
+      "graded_frame_count": 7500,
+      "ground_truth_possession_count": 17,
+      "macro_f1": 0.6207331924027959,
+      "mean_possession_duration_s": 10.803076923076924,
+      "predicted_possession_count": 26,
+      "spell_f1_mean": 0.3255813953488372,
+      "transition_f1": {
+        "12": 0.08163265306122448,
+        "25": 0.08163265306122448
+      }
+    },
+    "scope": "public",
+    "statistics_scope": "ground_truth_graded_frames"
+  },
+  "experiment": {
+    "description": "Real Pipeline 05 baseline with default centred smoothing window (50 frames)",
+    "hypothesis": null,
+    "notes": "Ran Pipelines 05 and 06 on the local tactical dataset in this checkout. Default parameters; no tuning against public ground truth. Replaces the synthetic demonstration in the active registry.",
+    "recorded_at_utc": "2026-10-30T22:36:46.693304+00:00"
+  },
+  "fingerprint": "a2f3aed1f4539420762c3e103ab150ed8316192627663aef6e75b7b84f4e9b0e",
+  "identity": {
+    "configuration": {
+      "window_frames": 50
+    },
+    "evaluation": {
+      "dataset_id": "BAR-ATH-public-five-minute",
+      "ground_truth": {
+        "id": "BAR-ATH-public",
+        "sha256": "e596a9af9626c623bb94be6fd350e12ee9a75c76a696cfadca3bc01735e92487"
+      },
+      "implementation": {
+        "id": "metrica-possession-metrics",
+        "sha256": "f77cdbfcd85ef23f313de4a97e44afb807c06d97d61177ea0afe57b2d672495d",
+        "version": "3de6b60"
+      },
+      "scope": "public"
+    },
+    "pipeline": "05_possession_baseline",
+    "recording_git_commit": "62517d1d03e82224f1298f826c783a41248b4e47",
+    "recording_id": "BAR-ATH_tactical",
+    "strategy": "nearest tracked player to the ball, centred majority vote",
+    "strategy_version": null,
+    "submission_sha256": "b9b729792ec68df32a86eab1d04cbcec697aae2a05befbe312c1f4bdf8e24107"
+  },
+  "prediction_statistics": {
+    "abstention_count": null,
+    "frame_count": 199319,
+    "label_counts": {
+      "A": 54819,
+      "D": 71520,
+      "H": 72980
+    },
+    "mean_possession_duration_s": null,
+    "predicted_possession_count": null,
+    "scope": "full_submission"
+  },
+  "provenance": {
+    "artifact_association": "caller_supplied_not_verified_by_scorer",
+    "execution": {
+      "elapsed_seconds": null,
+      "git_commit": null,
+      "git_dirty": null,
+      "lockfile_sha256": null,
+      "runtime": {},
+      "started_at_utc": null
+    },
+    "input_fingerprint_scope": "files_available_at_recording_time",
+    "inputs": {},
+    "recording": {
+      "git_commit": "62517d1d03e82224f1298f826c783a41248b4e47",
+      "git_dirty": true,
+      "lockfile_sha256": "a467642be34ffb2dc4f4c655748ee511ccf9664b2f8469cad6c7ae2e218651b0",
+      "runtime": {
+        "numpy_version": "2.5.4",
+        "pandas_version": "3.0.6",
+        "python_version": "3.12.14",
+        "tqdm_version": "4.70.1"
+      }
+    }
+  },
+  "run_id": "05_possession_baseline-a2f3aed1f4539420",
+  "schema_version": 1
+}
