@@ -1,5 +1,4 @@
 import {
-  filterRuns,
   sortRuns,
   comparisonRuns,
   metricText,
@@ -13,13 +12,11 @@ const columns = [
   ["strategy", "Strategy"],
   ["run_id", "Run ID"],
   ["commit", "Git commit"],
-  ["scope", "Evaluation scope"],
   ["spell_f1_mean", "spellF1"],
   ["macro_f1", "macroF1"],
   ["dead_ball_f1", "Dead-ball F1"],
   ["predicted_possession_count", "Predicted possessions"],
   ["fragmentation", "Fragmentation"],
-  ["status", "Reproducibility"],
 ];
 function element(document, tag, className, text) {
   const node = document.createElement(tag);
@@ -27,13 +24,6 @@ function element(document, tag, className, text) {
   if (text !== undefined) node.textContent = text;
   return node;
 }
-function scopeLabel(run) {
-  const e = run.evaluation;
-  if (!run.comparable)
-    return `Unverified · ${run.pipeline ?? "Unknown pipeline"} · ${shortId(run)} (individual only)`;
-  return `${e.scope === "public" ? "Public · exploratory" : e.scope} · ${e.dataset_id} · ${e.implementation.id} ${e.implementation.version ?? e.implementation.sha256?.slice(0, 8)} · group ${run.group_id.slice(0, 6)}`;
-}
-
 export function mountExperiments(root) {
   const document = root.ownerDocument;
   // Static template only: manifest values always enter through textContent.
@@ -45,12 +35,6 @@ export function mountExperiments(root) {
     <p class="experiment-caveat">Public scores are exploratory: only five minutes and <strong>17 labelled possessions</strong>. They do not establish a winning full-match model.</p>
     <p id="experiments-status" role="status" aria-live="polite"></p>
     <div id="experiments-content" hidden>
-      <div class="experiment-controls">
-        <label class="scope-control">Comparison view<select id="experiment-scope"></select></label>
-        <label>Pipeline<select id="experiment-pipeline"><option value="">All pipelines</option></select></label>
-        <label>Reproducibility<select id="experiment-status"><option value="">All statuses</option></select></label>
-        <label class="search-control">Find runs<input id="experiment-search" type="search" placeholder="Pipeline, strategy, run or commit" /></label>
-      </div>
       <div class="comparison-selection"><p id="experiment-selection" role="status"></p><button id="experiment-clear" class="quiet-button">Clear selection</button></div>
       <p id="experiment-scope-note" class="experiment-note"></p>
       <div class="experiment-charts">
@@ -77,8 +61,8 @@ export function mountExperiments(root) {
       <p class="experiment-note">Hover a mark for values, or focus it and press Enter to open run details. Exact recorded values are available in each row.</p>
       <section class="experiment-registry" aria-labelledby="registry-title">
         <div class="registry-heading"><h2 id="registry-title">Recorded runs</h2><p id="experiment-table-count" class="experiment-note"></p></div>
-        <p class="experiment-note">Select pipeline runs to compare them in the charts. All pipelines is exploratory; use an identified evaluation scope to restrict the comparison to matching conditions. Possession counts and fragmentation below refer to evaluated frames.</p>
-        <p class="chart-scroll-hint">Scroll the table horizontally to inspect all metrics and reproducibility status.</p>
+        <p class="experiment-note">Select pipeline runs to compare them in the charts. Comparisons across pipelines are exploratory; check evaluation provenance in run details for matching conditions. Possession counts and fragmentation below refer to evaluated frames.</p>
+        <p class="chart-scroll-hint">Scroll the table horizontally to inspect all metrics.</p>
         <div class="experiment-table-scroll" tabindex="0" role="region" aria-label="Experiment registry table; scroll horizontally for all metrics">
           <table class="experiment-table"><thead><tr id="experiment-head"><th scope="col">Compare</th></tr></thead><tbody id="experiment-rows"></tbody></table>
         </div>
@@ -87,10 +71,6 @@ export function mountExperiments(root) {
   const $ = (id) => root.querySelector(`#${id}`);
   const content = $("experiments-content"),
     status = $("experiments-status");
-  const scope = $("experiment-scope"),
-    pipeline = $("experiment-pipeline"),
-    state = $("experiment-status"),
-    search = $("experiment-search");
   const selected = new Set();
   let runs = [],
     loaded = false,
@@ -111,22 +91,6 @@ export function mountExperiments(root) {
     th.append(button);
     $("experiment-head").append(th);
     headers.set(key, th);
-  }
-  function options(select, values, first) {
-    const previous = select.value;
-    select.replaceChildren();
-    if (first) {
-      const option = element(document, "option", "", first);
-      option.value = "";
-      select.append(option);
-    }
-    for (const [value, label] of values) {
-      const option = element(document, "option", "", label);
-      option.value = value;
-      select.append(option);
-    }
-    if ([...select.options].some((option) => option.value === previous))
-      select.value = previous;
   }
   function details(run) {
     const box = element(document, "details", "run-details");
@@ -192,27 +156,13 @@ export function mountExperiments(root) {
     }
   }
   function render() {
-    const filtered = filterRuns(runs, {
-      query: search.value,
-      pipeline: pipeline.value,
-      status: state.value,
-    });
-    const compared = comparisonRuns(filtered, scope.value, selected);
+    const compared = comparisonRuns(runs, "", selected);
     $("experiment-selection").textContent =
-      `${selected.size} selected · ${compared.length} shown in charts${selected.size ? " (within this view and filters)" : " · showing all matching pipeline runs"}`;
+      `${selected.size} selected · ${compared.length} shown in charts${selected.size ? "" : " · showing all pipeline runs"}`;
     $("experiment-clear").disabled = !selected.size;
-    const representative = runs.find((run) => run.group_id === scope.value);
-    $("experiment-scope-note").classList.toggle(
-      "exploratory-comparison",
-      !scope.value,
-    );
-    $("experiment-scope-note").textContent = !scope.value
-      ? "Exploratory cross-pipeline comparison. Runs may have different or unknown datasets, ground truth or scorers; identical evaluation conditions are not confirmed. Counts remain specific to each run’s evaluated window. This is not a full-match ranking."
-      : representative
-        ? representative.comparable
-          ? `${scopeLabel(representative)}. Ground-truth fingerprint ${representative.evaluation.ground_truth.sha256.slice(0, 12)}; scorer ${representative.evaluation.implementation.sha256?.slice(0, 12) ?? representative.evaluation.implementation.version}.`
-          : "Evaluation provenance is incomplete. This view shows one run in isolation; shared unknown fields do not prove compatibility."
-        : "";
+    $("experiment-scope-note").classList.add("exploratory-comparison");
+    $("experiment-scope-note").textContent =
+      "Exploratory cross-pipeline comparison. Runs may have different or unknown datasets, ground truth or scorers; identical evaluation conditions are not confirmed. Counts remain specific to each run’s evaluated window. This is not a full-match ranking.";
     renderScores($("experiment-scores"), compared, inspect);
     renderScatter($("experiment-scatter"), compared, inspect);
     renderFragmentation($("experiment-fragmentation"), compared, inspect);
@@ -238,7 +188,7 @@ export function mountExperiments(root) {
       ),
     );
     body.replaceChildren();
-    for (const run of sortRuns(filtered, sortKey, direction)) {
+    for (const run of sortRuns(runs, sortKey, direction)) {
       const row = element(document, "tr");
       const checkCell = element(document, "td");
       const check = element(document, "input");
@@ -259,8 +209,6 @@ export function mountExperiments(root) {
       row.append(checkCell);
       for (const [key] of columns) {
         let value = run[key];
-        if (key === "scope")
-          value = `${run.evaluation.scope}${run.evaluation.scope === "public" ? " · exploratory" : ""}${!run.comparable ? " · unverified" : ""}`;
         if (key === "run_id") value = shortId(run);
         if (key === "commit") value = run.commit?.slice(0, 8) ?? "—";
         if (key in run.metrics)
@@ -281,7 +229,6 @@ export function mountExperiments(root) {
         if (key === "run_id") cell.title = run.run_id;
         if (key === "commit")
           cell.title = run.commit ?? "Recording commit unavailable";
-        if (key === "status") cell.classList.add("repro-status");
         row.append(cell);
       }
       body.append(row);
@@ -294,20 +241,20 @@ export function mountExperiments(root) {
       detailRow.append(cell);
       body.append(detailRow);
     }
-    if (!filtered.length) {
+    if (!runs.length) {
       const row = element(document, "tr"),
         cell = element(
           document,
           "td",
           "table-empty",
-          "No runs match these filters. Clear the search or choose another filter.",
+          "No recorded runs available.",
         );
       cell.colSpan = columns.length + 1;
       row.append(cell);
       body.append(row);
     }
     $("experiment-table-count").textContent =
-      `${filtered.length} of ${runs.length} runs`;
+      `${runs.length} runs`;
   }
   async function reload() {
     if (loading) return;
@@ -322,29 +269,9 @@ export function mountExperiments(root) {
       loaded = true;
       for (const id of selected)
         if (!runs.some((run) => run.run_id === id)) selected.delete(id);
-      const groups = new Map(
-        [...runs]
-          .sort((a, b) => Number(b.comparable) - Number(a.comparable))
-          .map((run) => [run.group_id, scopeLabel(run)]),
-      );
-      options(scope, [...groups], "All pipelines · exploratory comparison");
-      options(
-        pipeline,
-        [...new Set(runs.map((run) => run.pipeline).filter(Boolean))]
-          .sort()
-          .map((value) => [value, value]),
-        "All pipelines",
-      );
-      options(
-        state,
-        [...new Set(runs.map((run) => run.status))]
-          .sort()
-          .map((value) => [value, value]),
-        "All statuses",
-      );
       content.hidden = !runs.length;
       status.textContent = runs.length
-        ? `${runs.length} recorded runs · ${runs.filter((run) => !run.comparable).length} with incomplete evaluation provenance. Recording-time Git status is shown per run.`
+        ? `${runs.length} recorded runs · ${runs.filter((run) => !run.comparable).length} with incomplete evaluation provenance.`
         : "No experiments recorded yet. Record existing submission, metadata and score artifacts with scripts/record_experiment.py, then reload this registry.";
       render();
     } catch (error) {
@@ -355,9 +282,6 @@ export function mountExperiments(root) {
       $("experiments-reload").disabled = false;
     }
   }
-  for (const control of [scope, pipeline, state])
-    control.addEventListener("change", render);
-  search.addEventListener("input", render);
   $("experiment-clear").addEventListener("click", () => {
     selected.clear();
     render();
