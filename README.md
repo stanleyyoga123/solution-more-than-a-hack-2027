@@ -171,6 +171,10 @@ Open [http://127.0.0.1:8765](http://127.0.0.1:8765). See the
 [frontend guide](frontend/README.md) for optional videos and quality reports,
 custom paths, ports and playback controls.
 
+Use the **Experiments** tab to compare recorded possession-inference runs directly
+from the Git experiment registry, inspect provenance, and explore cross-pipeline
+scores and fragmentation with optional evaluation-scope filtering. See the [dashboard guide](frontend/README.md#experiment-comparison).
+
 ## Data conventions
 
 - `frame` is the zero-based source-video frame.

@@ -359,16 +359,22 @@ def _report_row(path: Path, document: dict[str, Any], reports: Path) -> dict[str
     }
 
 
-def compare_experiments(registry: Path) -> Path:
-    """Regenerate the stable CSV report without ranking experiments."""
-    started = perf_counter()
-    LOGGER.info("Loading experiment manifests: %s", registry / "runs")
+def load_run_manifests(registry: Path) -> list[tuple[Path, dict[str, Any]]]:
+    """Read registry manifests without generating reports or changing files."""
     documents = []
     for path in sorted((registry / "runs").glob("*.json")):
         document = json.loads(path.read_text(encoding="utf-8"))
         if document["schema_version"] != SCHEMA_VERSION:
             raise ValueError(f"Unsupported manifest schema: {path}")
         documents.append((path, document))
+    return documents
+
+
+def compare_experiments(registry: Path) -> Path:
+    """Regenerate the stable CSV report without ranking experiments."""
+    started = perf_counter()
+    LOGGER.info("Loading experiment manifests: %s", registry / "runs")
+    documents = load_run_manifests(registry)
     documents.sort(
         key=lambda item: (
             _group_key(item[1]),

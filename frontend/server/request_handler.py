@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from frontend.server.file_response import send_file
+from frontend.server.experiment_store import load_experiments
 from frontend.server.quality_report_store import empty_quality_report
 from frontend.server.tracking_store import TrackingStore
 
@@ -23,8 +24,12 @@ class RequestHandler(BaseHTTPRequestHandler):
         web_dir: Path,
         birdseye_video: Path | None = None,
         quality_body: bytes | None = None,
+        experiment_registry: Path | None = None,
         **kwargs,
     ):
+        self._experiment_registry = (
+            experiment_registry or Path(__file__).resolve().parents[2] / "experiments"
+        )
         self._store = store
         self._metadata = metadata
         self._video = video
@@ -48,6 +53,18 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def _route(self, send_body: bool) -> None:
         url = urlsplit(self.path)
+        if url.path == "/api/experiments":
+            try:
+                payload = load_experiments(self._experiment_registry)
+            except (OSError, ValueError):
+                _LOGGER.exception("Unable to load experiment registry")
+                self.send_error(
+                    503,
+                    "Experiment registry unavailable; check the server logs and retry",
+                )
+                return
+            self._send_json(payload, send_body)
+            return
         if url.path == "/api/metadata":
             self._send_json(self._metadata, send_body)
             return

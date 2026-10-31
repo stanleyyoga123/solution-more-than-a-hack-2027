@@ -106,3 +106,42 @@ def test_static_routes_do_not_expose_files_outside_web_directory(viewer_server):
     status, _, contents = request(viewer_server, "/api/metadata")
     assert status == 200
     assert json.loads(contents)["fps"] == 25
+
+
+def test_experiment_route_reloads_safely_and_keeps_head_read_only(tmp_path):
+    from pathlib import Path
+
+    runs = tmp_path / "experiments/runs"
+    runs.mkdir(parents=True)
+    handler = partial(
+        RequestHandler,
+        store=None,
+        metadata={"frame_count": 1},
+        video=tmp_path / "unused.mp4",
+        web_dir=tmp_path,
+        experiment_registry=runs.parent,
+    )
+    with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            port = server.server_port
+            assert json.loads(request(port, "/api/experiments")[2]) == {"runs": []}
+            source = next(
+                (Path(__file__).resolve().parents[3] / "experiments/runs").glob(
+                    "05*.json"
+                )
+            )
+            (runs / "run.json").write_bytes(source.read_bytes())
+            status, headers, body = request(port, "/api/experiments")
+            assert status == 200
+            assert headers["Cache-Control"] == "no-store"
+            assert len(json.loads(body)["runs"]) == 1
+            assert b'"artifacts"' not in body
+            assert b'"path"' not in body
+            assert request(port, "/api/experiments", method="HEAD")[2] == b""
+            assert request(port, "/api/experiments", method="POST")[0] == 501
+            assert (runs / "run.json").read_bytes() == source.read_bytes()
+        finally:
+            server.shutdown()
+            thread.join()

@@ -148,3 +148,78 @@ assets remain local; the server binds to the loopback interface.
 node --test tests/frontend/web/*.test.mjs
 .venv/bin/python -m black --check frontend tests/frontend
 ```
+
+## Experiment comparison
+
+Open the **Experiments** tab beside **Tracking Viewer**. Switching views pauses
+playback and keeps the viewer's frame and controls in place. The dashboard uses
+the same local server and requires no frontend build or additional service.
+The existing viewer startup inputs are still required.
+
+`GET /api/experiments` reads `experiments/runs/*.json` on every request using the
+registry's schema reader. It returns only dashboard fields: run/method identity,
+selected metrics, evaluation identity, reviewed numeric configuration parameters,
+and selected provenance with warnings. Artifact paths, submission CSVs, input
+contents and free-text notes are not served. Requests never record experiments,
+regenerate reports, or modify manifests. The generated registry CSV is not used.
+
+Record a new experiment after independently running inference and scoring:
+
+```bash
+python scripts/record_experiment.py \
+  --submission output/possession-11/possession_deadball.csv \
+  --metadata output/possession-11/possession_deadball.metadata.json \
+  --scores output/possession-11/possession_deadball.scores.json
+```
+
+Supply the actual known dataset, scope, ground-truth fingerprint and scorer
+identity when recording; see the [experiment registry guide](../experiments/README.md)
+for the complete provenance arguments. Then click **Reload registry**, or refresh
+the browser and reopen Experiments. There is no dashboard data file to maintain.
+
+### Charts and comparison controls
+
+- **Official evaluation metrics:** spellF1 (`spell_f1_mean`) and macroF1.
+- **Dead ball & possession quality:** dead-ball F1 (`per_class.D.f1` in the
+  original score, recorded as `dead_ball_f1`) versus spellF1. Zeroes remain
+  visible; missing coordinates exclude a point.
+- **Possession fragmentation:** predicted and ground-truth possession counts
+  on graded frames, plus the official fragmentation segment ratio. This ratio
+  is not the possession-count ratio. More than 1× indicates more segments;
+  less than 1× can indicate over-persistence.
+
+The default **All pipelines · exploratory comparison** view plots recorded runs
+across pipelines together. Chart annotations use full pipeline/model names such
+as `05_possession_baseline`; run fingerprints and commits remain in the table
+and details. Select table rows to compare a subset, or use pipeline/search/status
+filters. Clear selection to show all matching runs.
+
+Cross-pipeline comparison does not establish matching evaluation conditions:
+runs may have different or unknown datasets, ground truth or scorers. A prominent
+warning keeps that limitation visible. Use the optional **Comparison view**
+selector to restrict charts to a matching identified evaluation scope; unknown
+identities remain available as individual inspections as well.
+
+Click column headings to sort; missing values remain last in either direction.
+Hover chart marks for values, or focus them and press Enter to open run details.
+Each row provides configuration, exact metric values and provenance warnings.
+
+### Limitations and interpretation
+
+Public scores cover only **five minutes and 17 labelled possessions** and are
+exploratory. Neither sorting nor chart position recommends a full-match model.
+All chart counts refer to evaluated frames. Full-submission possession counts,
+when recorded, are shown separately and never compared against public-window
+ground-truth counts; current manifests do not contain those counts.
+
+Missing metrics display as dashes, not zero. Dirty-tree warnings describe the
+working tree when the experiment was recorded, not the current checkout. A
+recording commit does not establish the code used for historical inference;
+missing execution provenance stays explicit. Artifact association is supplied
+by the caller. The dashboard does not certify reproducibility.
+
+Configuration is restricted to reviewed numeric parameters for current pipelines;
+unreviewed fields are omitted with a warning. Unknown or unsupported manifest
+schemas produce a retryable loading error instead of partially plotted results.
+On small screens, charts and the table scroll horizontally to retain readable
+labels and metric columns. No new visualization dependency is required.
