@@ -227,7 +227,8 @@ export class ViewerController {
       this._birdseyeOverlay.setVisible(controls.birdseyeOverlay.checked);
     });
     controls.keyboardTarget.addEventListener("keydown", (event) => {
-      if (event.target.closest("input, select, button, a")) return;
+      if (controls.isActive && !controls.isActive()) return;
+      if (event.target.closest("input, select, button, a, summary")) return;
       if (event.code === "Space") {
         event.preventDefault();
         this._togglePlayback();

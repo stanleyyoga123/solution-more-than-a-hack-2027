@@ -10,6 +10,7 @@
     />
     <title>Touchline — Tracking viewer</title>
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/experiments.css" />
     <script type="module" src="/main.js"></script>
   </head>
   <body>
@@ -22,6 +23,11 @@
         <span class="recording-badge"><span class="live-dot"></span> TACTICAL RECORDING</span>
       </header>
 
+      <nav class="workspace-nav" aria-label="Workspace views">
+        <button id="tracking-tab" aria-current="page" aria-controls="tracking-panel">Tracking Viewer</button>
+        <button id="experiments-tab" aria-controls="experiments-panel">Experiments</button>
+      </nav>
+      <div id="tracking-panel">
       <section class="match-header" aria-labelledby="match-title">
         <div>
           <p class="eyebrow">TRACKING WORKSPACE <span>01</span></p>
@@ -290,6 +296,8 @@
           <kbd>→</kbd> one frame
         </p>
       </footer>
+      </div>
+      <section id="experiments-panel" aria-labelledby="experiments-title" hidden></section>
       <noscript>This viewer requires JavaScript to synchronize video and tracking positions.</noscript>
     </main>
   </body>

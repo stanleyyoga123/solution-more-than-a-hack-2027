@@ -1,3 +1,5 @@
+import { setupNavigation } from "./navigation.js";
+import { mountExperiments } from "./experiments/dashboard.js";
 import { TrackingClient } from "./viewer/tracking_client.js";
 import { FrameCache } from "./viewer/frame_cache.js";
 import { CameraRenderer } from "./viewer/camera_renderer.js";
@@ -63,6 +65,7 @@ async function startViewer() {
       birdseyeOverlay: document.querySelector("#show-birdseye-overlay"),
       overlay: document.querySelector("#show-overlay"),
       keyboardTarget: document,
+      isActive: () => !document.querySelector("#tracking-panel").hidden,
     };
     const qualityReview = new QualityReviewController(
       client,
@@ -82,4 +85,9 @@ async function startViewer() {
   }
 }
 
+const experiments = mountExperiments(document.querySelector("#experiments-panel"));
+setupNavigation(document, {
+  leaveTracking: () => document.querySelector("#source-video").pause(),
+  openExperiments: () => experiments.open(),
+});
 startViewer();
