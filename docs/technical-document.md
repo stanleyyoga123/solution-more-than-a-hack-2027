@@ -1,5 +1,7 @@
 # Technical document: possession labelling for Barcelona vs Athletic Club
 
+Team: No Hala Madrid
+
 ## Summary
 
 The submission labels each of the 199,319 tactical-video frames `H`, `A`, `D` or
