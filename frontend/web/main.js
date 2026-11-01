@@ -1,3 +1,4 @@
+import { mountDiagnostics } from "./diagnostics.js";
 import { setupNavigation } from "./navigation.js";
 import { mountExperiments } from "./experiments/dashboard.js";
 import { TrackingClient } from "./viewer/tracking_client.js";
@@ -86,7 +87,9 @@ async function startViewer() {
 }
 
 const experiments = mountExperiments(document.querySelector("#experiments-panel"));
+const diagnostics = mountDiagnostics(document.querySelector("#diagnostics-panel"));
 setupNavigation(document, {
+  openDiagnostics: () => diagnostics.open(),
   leaveTracking: () => document.querySelector("#source-video").pause(),
   openExperiments: () => experiments.open(),
 });

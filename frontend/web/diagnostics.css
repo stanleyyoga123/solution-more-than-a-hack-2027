@@ -1,0 +1,25 @@
+/* Diagnostics uses the shared analysis header, chart, legend and table styles. */
+.diagnostic-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  margin: 24px 0 12px;
+}
+.diagnostic-metrics dt { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.diagnostic-metrics dd { margin: 8px 0 0; font-size: 18px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.diagnostic-readout { min-height: 44px; font-variant-numeric: tabular-nums; }
+#diagnostics-panel .chart-scroll svg { min-width: 600px; }
+#diagnostics-panel svg:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+#diagnostics-panel svg [data-inspected="true"] { stroke: currentColor; stroke-width: 2px; }
+.diagnostic-table tbody th { background: transparent; font-weight: 500; width: 140px; }
+.diagnostic-table td { overflow-wrap: anywhere; }
+#diagnostics-panel .diagnostic-table td:nth-child(2) { min-width: 0; }
+@media (max-width: 1000px) {
+  .diagnostic-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .diagnostic-metrics { gap: 20px 16px; }
+  .diagnostic-metrics dd { font-size: 16px; }
+  .diagnostic-table tbody th { width: 95px; }
+  .diagnostic-table { table-layout: fixed; }
+}

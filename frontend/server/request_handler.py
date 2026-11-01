@@ -24,6 +24,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         web_dir: Path,
         birdseye_video: Path | None = None,
         quality_body: bytes | None = None,
+        diagnostics_body: bytes | None = None,
         experiment_registry: Path | None = None,
         **kwargs,
     ):
@@ -34,6 +35,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self._metadata = metadata
         self._video = video
         self._birdseye_video = birdseye_video
+        self._diagnostics_body = diagnostics_body
         self._quality_body = quality_body
         self._web_dir = web_dir.resolve()
         super().__init__(*args, **kwargs)
@@ -64,6 +66,12 @@ class RequestHandler(BaseHTTPRequestHandler):
                 )
                 return
             self._send_json(payload, send_body)
+            return
+        if url.path == "/api/diagnostics":
+            if self._diagnostics_body is None:
+                self._send_json({"available": False}, send_body)
+            else:
+                self._send_json_body(self._diagnostics_body, send_body)
             return
         if url.path == "/api/metadata":
             self._send_json(self._metadata, send_body)

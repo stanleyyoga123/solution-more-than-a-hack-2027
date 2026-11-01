@@ -34,10 +34,10 @@
 .experiments-header .intro {
   margin: 10px 0 0;
 }
-#experiments-panel {
+:is(#experiments-panel, #diagnostics-panel) {
   padding-bottom: 48px;
 }
-#experiments-panel h2 {
+:is(#experiments-panel, #diagnostics-panel) h2 {
   font-size: 20px;
   letter-spacing: -0.015em;
   margin: 0 0 10px;
@@ -57,13 +57,14 @@
   font-size: 14px;
   line-height: 1.6;
 }
-#experiments-status {
+#experiments-status,
+.analysis-status {
   color: #bbc4b7;
   font-size: 14px;
   line-height: 1.6;
   margin: 22px 0;
 }
-#experiments-panel {
+:is(#experiments-panel, #diagnostics-panel) {
   caret-color: var(--accent);
   scrollbar-color: #77846c #1d231c;
 }
@@ -338,7 +339,7 @@ summary:focus-visible,
 .workspace-nav button[aria-current="page"]:hover {
   border-bottom-color: var(--accent);
 }
-#experiments-panel .quality-button,
+:is(#experiments-panel, #diagnostics-panel) .quality-button,
 #experiments-panel .quiet-button {
   font-size: 13px;
   min-height: 40px;

@@ -11,6 +11,7 @@
     <title>Touchline — Tracking viewer</title>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/experiments.css" />
+    <link rel="stylesheet" href="/diagnostics.css" />
     <script type="module" src="/main.js"></script>
   </head>
   <body>
@@ -25,6 +26,7 @@
 
       <nav class="workspace-nav" aria-label="Workspace views">
         <button id="tracking-tab" aria-current="page" aria-controls="tracking-panel">Tracking Viewer</button>
+        <button id="diagnostics-tab" aria-controls="diagnostics-panel">Data &amp; Diagnostics</button>
         <button id="experiments-tab" aria-controls="experiments-panel">Experiments</button>
       </nav>
       <div id="tracking-panel">
@@ -297,6 +299,7 @@
         </p>
       </footer>
       </div>
+      <section id="diagnostics-panel" aria-label="Data and Diagnostics" hidden></section>
       <section id="experiments-panel" aria-labelledby="experiments-title" hidden></section>
       <noscript>This viewer requires JavaScript to synchronize video and tracking positions.</noscript>
     </main>

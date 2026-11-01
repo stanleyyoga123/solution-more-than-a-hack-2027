@@ -27,6 +27,7 @@ def create_server(
     birdseye_start_seconds: float = 0.0,
     trajectory_flags: Path | None = None,
     gap_continuity: Path | None = None,
+    diagnostics: Path | None = None,
 ) -> ThreadingHTTPServer:
     if not math.isfinite(birdseye_start_seconds) or birdseye_start_seconds < 0:
         raise ValueError("birdseye_start_seconds must be finite and nonnegative")
@@ -62,6 +63,10 @@ def create_server(
     quality = load_quality_reports(trajectory_flags, gap_continuity)
     quality_body = json.dumps(quality, allow_nan=False, separators=(",", ":")).encode()
     store = TrackingStore(pixels, normalized, cache_dir, metadata["frame_count"])
+    diagnostics_body = None
+    if diagnostics is not None:
+        _LOGGER.info("Loading diagnostics: %s", diagnostics)
+        diagnostics_body = diagnostics.read_bytes()
     handler = partial(
         RequestHandler,
         store=store,
@@ -69,6 +74,7 @@ def create_server(
         video=video,
         birdseye_video=birdseye_video,
         quality_body=quality_body,
+        diagnostics_body=diagnostics_body,
         web_dir=Path(__file__).parents[1] / "web",
     )
     return ThreadingHTTPServer(("127.0.0.1", port), handler)

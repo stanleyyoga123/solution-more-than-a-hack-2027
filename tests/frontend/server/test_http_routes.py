@@ -145,3 +145,15 @@ def test_experiment_route_reloads_safely_and_keeps_head_read_only(tmp_path):
         finally:
             server.shutdown()
             thread.join()
+
+
+def test_diagnostics_unconfigured_returns_read_only_empty_state(viewer_server):
+    status, headers, body = request(viewer_server, "/api/diagnostics")
+    assert status == 200
+    assert json.loads(body) == {"available": False}
+    head_status, head_headers, head_body = request(
+        viewer_server, "/api/diagnostics", method="HEAD"
+    )
+    assert head_status == 200
+    assert head_headers["Content-Length"] == headers["Content-Length"]
+    assert head_body == b""
