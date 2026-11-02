@@ -223,3 +223,46 @@ unreviewed fields are omitted with a warning. Unknown or unsupported manifest
 schemas produce a retryable loading error instead of partially plotted results.
 On small screens, charts and the table scroll horizontally to retain readable
 labels and metric columns. No new visualization dependency is required.
+
+## Data & Diagnostics (Stage 1)
+
+Generate the read-only report independently, then pass it to the viewer:
+
+```bash
+python -m src.diagnostics \
+  --normalized output/tracking_normalized_2d.csv \
+  --metadata output/tracking_normalized_2d.metadata.json \
+  --baseline output/possession_baseline.csv \
+  --ground-truth data/BAR-ATH_possession_gt_public.csv \
+  --output output/diagnostics.json
+python -m frontend --diagnostics output/diagnostics.json
+```
+
+Supply the public baseline and ground truth on the same zero-based tactical
+frame timeline as the normalized export. The report records all input paths.
+The server loads the JSON at startup and serves GET/HEAD `/api/diagnostics`;
+it never runs a pipeline. Restart after regenerating a report. Existing exports
+are refused. Without `--diagnostics`, the tab explains how to configure a report.
+
+The overview counts usable observation rows (valid, finite x/y), visible ball
+frames, and mean visible player observations. Ball visibility uses normalized
+tracking availability, not camera visibility or a possession estimate. Gap runs
+include recording edges and cover the entire tactical recording without an
+implicit halftime split. The histogram counts each missing run once across thirty equal-width duration bins.
+Bins include their lower edge; only the final bin includes its upper edge.
+The existing report’s `gap_ecdf` duration entries supply the observations;
+cumulative fractions are not used by the histogram. Intervals
+are half-open; seconds are recording time, not broadcast or match clock time.
+The possession timeline displays the supplied public baseline. spellF1 uses the
+vendored official scorer, its IoU thresholds, scored ground-truth runs and
+abstention filling. Ground-truth X frames are ungraded.
+
+Stage 2 is deferred: player–ball geometry, Smart Tagging coverage, failure-case
+exploration, and viewer jump-to-frame integration are not included.
+
+Diagnostics uses the same analysis headings, chart labels, legends and table
+styles as Experiments. Counts use grouped digits; chart values retain the report's
+precision. Focus a chart and use Left/Right to inspect values, or Home/End to
+reach the first/last observation. Hover or tap a mark for the same persistent
+readout. Charts scroll inside their containers on narrow screens. A failed load
+provides a Retry loading button; missing reports explain the configuration.

@@ -46,6 +46,9 @@ def main() -> None:
         type=Path,
         help="Step 08 CSV; defaults to output/tracking_gap_continuity.csv when present",
     )
+    parser.add_argument(
+        "--diagnostics", type=Path, help="Stage 1 diagnostic JSON export"
+    )
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     configure_console_logging()
@@ -75,6 +78,7 @@ def main() -> None:
         birdseye_start_seconds=args.birdseye_start_seconds,
         trajectory_flags=trajectory_flags,
         gap_continuity=gap_continuity,
+        diagnostics=args.diagnostics,
     ) as server:
         logging.getLogger(__name__).info(
             "Tracking viewer ready: http://127.0.0.1:%d", server.server_port

@@ -116,3 +116,23 @@ test("hidden viewer ignores playback keys and active viewer still steps", () => 
   assert.ok(currentTime > 0);
   assert.equal(pauses, 1);
 });
+
+test("diagnostics opens independently and pauses the tracking viewer", () => {
+  const elements = Object.fromEntries(
+    ["tracking", "experiments", "diagnostics"].flatMap(name =>
+      ["tab", "panel"].map(kind => [`${name}-${kind}`, target()])),
+  );
+  let pauses = 0, opens = 0;
+  const nav = setupNavigation({ querySelector: s => elements[s.slice(1)] }, {
+    leaveTracking: () => pauses++, openExperiments() {},
+    openDiagnostics: () => opens++,
+  });
+  nav.show("diagnostics");
+  assert.equal(pauses, 1);
+  assert.equal(opens, 1);
+  assert.equal(elements["diagnostics-panel"].hidden, false);
+  assert.equal(elements["tracking-panel"].hidden, true);
+  assert.equal(elements["experiments-panel"].hidden, true);
+  nav.show("experiments");
+  assert.equal(elements["diagnostics-panel"].hidden, true);
+});
