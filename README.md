@@ -220,3 +220,8 @@ node --test tests/frontend/web/*.test.mjs
 Some legacy tests import removed exploratory modules, so a bare `python -m pytest`
 fails to collect; the commands above cover the current code. Video tests need
 FFmpeg, and HTTP tests need permission to bind local ports.
+
+The **Data & Diagnostics** tab adds public-window player–ball geometry, Smart Tagging
+evidence and searchable failure intervals with jumps into the existing viewer.
+Generate its report offline; see the [diagnostics guide](src/diagnostics/README.md)
+and [dashboard interpretation](frontend/README.md#data--diagnostics).

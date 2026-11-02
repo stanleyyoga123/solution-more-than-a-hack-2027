@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 
 from frontend.server.request_handler import RequestHandler
+from frontend.server.diagnostics_store import public_report
 from frontend.server.quality_report_store import load_quality_reports
 from frontend.server.tracking_store import TrackingStore
 from frontend.server.video_metadata import read_video_metadata
@@ -66,7 +67,12 @@ def create_server(
     diagnostics_body = None
     if diagnostics is not None:
         _LOGGER.info("Loading diagnostics: %s", diagnostics)
-        diagnostics_body = diagnostics.read_bytes()
+        if diagnostics.exists():
+            diagnostics_body = json.dumps(
+                public_report(json.loads(diagnostics.read_text())), allow_nan=False
+            ).encode()
+        else:
+            _LOGGER.info("Diagnostic report unavailable: %s", diagnostics)
     handler = partial(
         RequestHandler,
         store=store,

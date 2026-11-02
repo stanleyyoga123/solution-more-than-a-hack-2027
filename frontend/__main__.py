@@ -47,7 +47,9 @@ def main() -> None:
         help="Step 08 CSV; defaults to output/tracking_gap_continuity.csv when present",
     )
     parser.add_argument(
-        "--diagnostics", type=Path, help="Stage 1 diagnostic JSON export"
+        "--diagnostics",
+        type=Path,
+        help="Offline diagnostic JSON; defaults to output/diagnostics.json when present",
     )
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
@@ -67,6 +69,11 @@ def main() -> None:
         default_gaps = Path("output/tracking_gap_continuity.csv")
         if default_gaps.is_file():
             gap_continuity = default_gaps
+    diagnostics = args.diagnostics
+    if diagnostics is None:
+        default_diagnostics = Path("output/diagnostics.json")
+        if default_diagnostics.is_file():
+            diagnostics = default_diagnostics
     with create_server(
         args.video,
         args.pixels,
@@ -78,7 +85,7 @@ def main() -> None:
         birdseye_start_seconds=args.birdseye_start_seconds,
         trajectory_flags=trajectory_flags,
         gap_continuity=gap_continuity,
-        diagnostics=args.diagnostics,
+        diagnostics=diagnostics,
     ) as server:
         logging.getLogger(__name__).info(
             "Tracking viewer ready: http://127.0.0.1:%d", server.server_port
