@@ -224,9 +224,9 @@ schemas produce a retryable loading error instead of partially plotted results.
 On small screens, charts and the table scroll horizontally to retain readable
 labels and metric columns. No new visualization dependency is required.
 
-## Data & Diagnostics (Stage 1)
+## Data & Diagnostics
 
-Generate the read-only report independently, then pass it to the viewer:
+Generate the read-only report independently at the default path, then start the viewer:
 
 ```bash
 python -m src.diagnostics \
@@ -234,15 +234,18 @@ python -m src.diagnostics \
   --metadata output/tracking_normalized_2d.metadata.json \
   --baseline output/possession_baseline.csv \
   --ground-truth data/BAR-ATH_possession_gt_public.csv \
+  --smart-tagging data/tactical/BAR-ATH_tactical_smart_tagging.xml \
   --output output/diagnostics.json
-python -m frontend --diagnostics output/diagnostics.json
+python -m frontend
 ```
 
 Supply the public baseline and ground truth on the same zero-based tactical
-frame timeline as the normalized export. The report records all input paths.
+frame timeline as the normalized export. The local report records input paths, SHA-256 fingerprints, generation time and schema version. The HTTP response exposes only reviewed fields and source basenames.
 The server loads the JSON at startup and serves GET/HEAD `/api/diagnostics`;
-it never runs a pipeline. Restart after regenerating a report. Existing exports
-are refused. Without `--diagnostics`, the tab explains how to configure a report.
+it never runs a pipeline. Restart after regenerating a report. Existing diagnostic reports are replaced atomically after successful generation;
+a failed run preserves the previous report. The viewer automatically discovers `output/diagnostics.json` when present.
+Use `--diagnostics path/to/report.json` to override this default. If no report
+exists, the tab explains how to generate one; the viewer never generates it during startup.
 
 The overview counts usable observation rows (valid, finite x/y), visible ball
 frames, and mean visible player observations. Ball visibility uses normalized
@@ -257,8 +260,93 @@ The possession timeline displays the supplied public baseline. spellF1 uses the
 vendored official scorer, its IoU thresholds, scored ground-truth runs and
 abstention filling. Ground-truth X frames are ungraded.
 
-Stage 2 is deferred: player–ball geometry, Smart Tagging coverage, failure-case
-exploration, and viewer jump-to-frame integration are not included.
+### Players, ball & possession
+
+ECDFs show the fraction of usable public H/A/D frames at or below each nearest-player
+distance. Equal distances share the final cumulative fraction. Medians use the same
+samples. Coordinates are scaled by the matching pitch length and width, without
+clamping off-pitch observations. A valid finite ball and at least one valid finite
+player are required. Exclusions distinguish missing ball frames from frames with a
+ball but no usable players. Partial player availability can overestimate distance;
+slots are never treated as persistent identities. The availability bars normalize each true state to 100%; the adjoining table retains
+observed/missing counts and percentages with explicit labelled-frame denominators,
+not camera visibility. The shared distance input reports each state’s exact ECDF
+fraction at or below that threshold. Empty distributions read No measurements.
+Distance alone cannot establish controlled possession or dead-ball state.
+
+### Match events & stoppages
+
+Category frequencies pair full-match descriptive counts with events whose
+half-open phases intersect public H/A/D labels. Both bars use a single shared count
+scale; public overlap is a subset, not a rate adjusted for observation duration. Original type names are retained,
+including set-piece subtypes and attacking/defensive transitions. Team tags are
+reported explicitly, including Unknown / N/A. Set-piece overlap counts the union
+of SET PIECES phases on each true state; overlapping tags never double-count a
+frame. Only public labels can establish live (H/A) versus dead (D).
+
+Smart Tagging seconds become tactical frames using `round(seconds * 25)`, independent
+of metadata FPS. Nearby evidence includes **any event category** whose phase
+intersects the stoppage expanded by `--event-window-seconds` (default 5 seconds on
+each side). A phase ending exactly at the window start does not overlap. Coverage
+counts true D runs, including those clipped by public-label boundaries. A stoppage
+is partly or wholly missed when any raw prediction in it is not D. The two missed
+counts partition these D runs by presence/absence of nearby evidence. The UI
+displays missed/total and a percentage within each evidence group. A zero
+denominator reads Nothing to compare, never 0%; no group comparison is possible when one
+group is empty. Broad tactical
+phases can cover many stoppages: coverage is not precision, causality, or proof of
+correct event timing. No inference is rerun or changed.
+
+### Moments to review
+
+Search frames, categories, states, context or descriptions; combine category and
+true-state filters. Ten compact intervals are shown per page. Sort by tactical start time, longest
+duration, or category; Clear filters resets the search, filters and order. Watch in Viewer
+stays beside each interval on mobile, while expandable Details shows frame bounds,
+ball visibility, event phases and the detailed description. Multiple categories can
+apply to an interval. All intervals are generated from raw predictions on public
+labels; X predictions remain abstentions rather than being filled for diagnostics.
+The official Stage 1 spellF1 display retains its official abstention policy.
+
+- False stoppage: true H/A, predicted D.
+- Missed stoppage: true D, predicted anything other than D.
+- Candidate possession split: a true H/A run overlaps multiple predicted H/A runs.
+- Candidate possession merge: a predicted H/A run overlaps multiple true H/A runs.
+- Missed/spurious transition: unmatched true/predicted H/A/D boundaries. Matching is
+  one-to-one by ordered state pair, chronologically, maximizing match count within
+  `--transition-tolerance-frames` (default 25). Matching never crosses an X ground-truth
+  window. Prediction transitions involving X are not invented as team transitions.
+
+Transition review windows extend by the tolerance around their boundary and are
+clipped to graded windows. Findings are partitioned at category and label boundaries,
+so every row has a single true/predicted state and can carry multiple categories.
+Row counts are inspection intervals, not independent errors or possessions. Ball
+visibility percentages use every frame in that row as the denominator.
+
+**Watch in Viewer** switches to the mounted Tracking Viewer and calls its existing
+seek method at the zero-based start frame. Playback pauses as with existing frame
+navigation; camera, pitch tracking and bird's-eye footage synchronize through the
+same controller. A selected-interval banner retains its time/frame bounds, categories
+and true/predicted states without constraining playback. Back to this moment
+restores the existing filters/page and focuses the original Watch button; Hide review note removes this context. End bounds are exclusive and are never used as seek targets.
+The viewer's existing quality reports and navigation remain independent.
+
+### Regeneration, provenance and missing reports
+
+Rerun the command above with the same output filename to refresh the report safely.
+The completed JSON replaces the previous file atomically; failed runs preserve it.
+Output paths matching any input file are refused.
+All expensive work happens offline. Restart the viewer to load the new report.
+Omit `--smart-tagging` to generate geometry and cases without event evidence; empty
+context then means unavailable evidence, not an observed absence of events.
+Older Stage 1 reports remain usable with explanatory Stage 2 empty states.
+A missing diagnostic file displays setup guidance without blocking the viewer.
+Geometry needs pitch dimensions; legacy reports without them show an empty state.
+
+See [the diagnostic generator guide](../src/diagnostics/README.md) for architecture
+and checks. Keep reports, detailed cases, source tracking and review screenshots
+under ignored `output/` or `data/`. Sanitized HTTP responses are local inspection
+data, not permission to redistribute competition assets or derived frame-level data.
 
 Diagnostics uses the same analysis headings, chart labels, legends and table
 styles as Experiments. Counts use grouped digits; chart values retain the report's
@@ -266,3 +354,23 @@ precision. Focus a chart and use Left/Right to inspect values, or Home/End to
 reach the first/last observation. Hover or tap a mark for the same persistent
 readout. Charts scroll inside their containers on narrow screens. A failed load
 provides a Retry loading button; missing reports explain the configuration.
+
+### Reading path
+
+The review summary links generated counts to tracking gaps, geometry, event
+evidence and failure cases. It reports observations rather than ranking model
+quality. Full-recording predictions are labelled separately from public-window
+evaluation. Generation time is visible near the heading. Essential scope and
+limitations remain visible; detailed exclusions and methodology expand on demand.
+Chart keyboard instructions appear once. Home possession (H), Away possession (A), Play stopped (D) and
+No prediction (X) are named consistently, and cases show tactical time plus frame bounds.
+
+### Plain-language labels
+
+The interface calls the organisers’ public ground truth **reference answers**, and
+the part of the video with those answers the **reference segment**. A **frame** is
+one image in the video. **Middle distance** means the median, not the average.
+Review labels use everyday descriptions while retaining the original category
+keys in the report. Searches accept both forms. For example, Candidate possession
+merge appears as Separate possessions may be joined. These remain suggestions
+to check, not confirmed mistakes.

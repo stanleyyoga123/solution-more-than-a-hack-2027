@@ -2,9 +2,9 @@
 import { TEAM_COLOURS } from './viewer/entity_markers.js';
 
 export const states = {
-  true: ['Observed', 'var(--accent)'], false: ['Missing', 'var(--muted)'],
-  H: ['Home', TEAM_COLOURS[0]], A: ['Away', TEAM_COLOURS[1]],
-  D: ['Dead', 'var(--muted)'], X: ['Unknown', 'currentColor'],
+  true: ['Position recorded', 'var(--accent)'], false: ['Missing', 'var(--muted)'],
+  H: ['Home possession (H)', TEAM_COLOURS[0]], A: ['Away possession (A)', TEAM_COLOURS[1]],
+  D: ['Play stopped (D)', 'var(--muted)'], X: ['No prediction (X)', 'currentColor'],
 };
 /** The export retains one duration per gap, including repeated durations. */
 export const GAP_BIN_COUNT = 30;
@@ -22,7 +22,7 @@ export function gapHistogram(points) {
   }
   return bins;
 }
-function chart(container, label, height, width = 640) {
+export function chart(container, label, height, width = 640) {
   const document = container.ownerDocument;
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -38,7 +38,7 @@ function chart(container, label, height, width = 640) {
   };
   return { svg, add };
 }
-function inspect(svg, marks, descriptions, output) {
+export function inspect(svg, marks, descriptions, output) {
   if (!marks.length) return;
   let selected = 0;
   const select = index => {
@@ -67,12 +67,12 @@ function inspect(svg, marks, descriptions, output) {
 export function renderTimeline(container, intervals, count, fps, output) {
   const width = Math.max(640, container.clientWidth || 640);
   const plotWidth = width - 100;
-  const {svg, add} = chart(container, 'Tactical recording timeline', 110, width);
+  const {svg, add} = chart(container, 'Video timeline', 110, width);
   // Keep labels at their drawn size when the viewport changes; the wrapper scrolls.
   svg.setAttribute('style', `width: ${width}px`);
   const descriptions = [];
   const marks = intervals.map(run => {
-    descriptions.push(`${states[run.value][0]} · ${(run.start / fps).toFixed(2)}–${(run.stop / fps).toFixed(2)} s · frames ${run.start}–${run.stop} (end exclusive)`);
+    descriptions.push(`${states[run.value][0]} · ${(run.start / fps).toFixed(2)}–${(run.stop / fps).toFixed(2)} s · frames ${run.start}–${run.stop} (last frame not included)`);
     return add('rect', {x: 60 + plotWidth * run.start / count, y: 12, width: plotWidth * (run.stop - run.start) / count, height: 32, fill: states[run.value][1]});
   });
   for (let i = 0; i <= 4; i++) {
@@ -80,7 +80,7 @@ export function renderTimeline(container, intervals, count, fps, output) {
     add('line', {x1:x, x2:x, y1:48, y2:54, class:'chart-grid'});
     add('text', {x,y:72,'text-anchor':'middle',class:'chart-tick'}, (count / fps * i / 4).toFixed(count / fps < 1 ? 2 : 0));
   }
-  add('text', {x:60 + plotWidth / 2,y:100,'text-anchor':'middle',class:'chart-axis'}, 'Tactical recording time (s)');
+  add('text', {x:60 + plotWidth / 2,y:100,'text-anchor':'middle',class:'chart-axis'}, 'Time in the video (seconds)');
   inspect(svg, marks, descriptions, output);
 }
 export function renderGapHistogram(container, points, output) {
@@ -88,7 +88,7 @@ export function renderGapHistogram(container, points, output) {
   if (!bins.length) return;
   const maximum = bins.at(-1).stop;
   const ceiling = Math.max(4, Math.ceil(Math.max(...bins.map(bin => bin.count)) / 4) * 4);
-  const {svg, add} = chart(container, 'Missing-ball gap-duration histogram', 270);
+  const {svg, add} = chart(container, 'Lengths of gaps in ball tracking', 270);
   for (let i = 0; i <= 4; i++) {
     const y = 210 - 42.5 * i, x = 60 + 135 * i;
     add('line', {x1:60,x2:600,y1:y,y2:y,class:'chart-grid'});
@@ -96,18 +96,18 @@ export function renderGapHistogram(container, points, output) {
     add('text', {x,y:232,'text-anchor':'middle',class:'chart-tick'}, (maximum * i / 4).toFixed(maximum < 1 ? 3 : 1));
   }
   add('text', {x:60,y:20,class:'chart-axis'}, 'Number of gaps');
-  add('text', {x:330,y:260,'text-anchor':'middle',class:'chart-axis'}, 'Missing-ball gap duration (s)');
+  add('text', {x:330,y:260,'text-anchor':'middle',class:'chart-axis'}, 'Time without a ball position (seconds)');
   const marks = bins.map((bin, index) => {
     const height = 170 * bin.count / ceiling;
     return add('rect', {x:60+540/bins.length*index,y:210-height,width:540/bins.length-2,height,class:'metric-primary'});
   });
   const digits = maximum < 1 ? 3 : 2;
   inspect(svg, marks, bins.map((bin, index) =>
-    `${bin.start.toFixed(digits)}–${bin.stop.toFixed(digits)} s (${index === bins.length - 1 ? 'both bounds included' : 'upper bound excluded'}) · ${bin.count} gaps · ${points.length} total gaps`
+    `${bin.start.toFixed(digits)}–${bin.stop.toFixed(digits)} s (${index === bins.length - 1 ? 'includes both ends' : 'does not include the upper end'}) · ${bin.count} ${bin.count === 1 ? 'gap' : 'gaps'} · ${points.length} total gaps`
   ), output);
 }
 export function renderSpellScores(container, scores, output) {
-  const {svg, add} = chart(container, 'Official spellF1 by IoU threshold', 270);
+  const {svg, add} = chart(container, 'Possession score at different matching requirements', 270);
   for(let i=0;i<=4;i++) {
     const x=100+120*i;
     add('line',{x1:x,x2:x,y1:30,y2:210,class:'chart-grid'});
@@ -116,12 +116,12 @@ export function renderSpellScores(container, scores, output) {
   const descriptions=[];
   const marks=Object.entries(scores).map(([iou, score],i)=>{
     const y=40+i*35;
-    add('text',{x:60,y:y+12,'text-anchor':'middle',class:'chart-label'},iou);
+    add('text',{x:60,y:y+12,'text-anchor':'middle',class:'chart-label'},`${Math.round(Number(iou)*100)}%`);
     add('text',{x:630,y:y+12,'text-anchor':'end',class:'chart-value'},score.f1.toFixed(4));
-    descriptions.push(`IoU ${iou} · spellF1 ${score.f1.toFixed(4)}`);
+    descriptions.push(`Required time overlap: ${Math.round(Number(iou)*100)}% · possession score: ${score.f1.toFixed(4)}`);
     return add('rect',{x:100,y,width:score.f1*480,height:16,class:'metric-primary'});
   });
-  add('text',{x:60,y:20,'text-anchor':'middle',class:'chart-axis'},'IoU');
+  add('text',{x:60,y:20,'text-anchor':'middle',class:'chart-axis'},'Overlap');
   add('text',{x:340,y:260,'text-anchor':'middle',class:'chart-axis'},'spellF1');
   inspect(svg,marks,descriptions,output);
 }
