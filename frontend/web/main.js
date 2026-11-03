@@ -1,3 +1,8 @@
+import {mountInspectionContext} from './diagnostic_inspection.js';
+import {inspectCase} from './diagnostic_cases.js';
+import { mountDiagnostics } from "./diagnostics.js";
+import { setupNavigation } from "./navigation.js";
+import { mountExperiments } from "./experiments/dashboard.js";
 import { TrackingClient } from "./viewer/tracking_client.js";
 import { FrameCache } from "./viewer/frame_cache.js";
 import { CameraRenderer } from "./viewer/camera_renderer.js";
@@ -63,6 +68,7 @@ async function startViewer() {
       birdseyeOverlay: document.querySelector("#show-birdseye-overlay"),
       overlay: document.querySelector("#show-overlay"),
       keyboardTarget: document,
+      isActive: () => !document.querySelector("#tracking-panel").hidden,
     };
     const qualityReview = new QualityReviewController(
       client,
@@ -77,9 +83,31 @@ async function startViewer() {
     });
     controller.start();
     qualityReview.start();
+    if (video.readyState < 1) {
+      await new Promise((resolve, reject) => {
+        video.addEventListener('loadedmetadata', resolve, {once: true});
+        video.addEventListener('error', () => reject(new Error('Tactical video could not be loaded.')), {once: true});
+      });
+    }
+    return controller;
   } catch (error) {
     view.showStatus(`${error.message} Check the local server and reload this page.`, "error");
   }
 }
 
-startViewer();
+const experiments = mountExperiments(document.querySelector("#experiments-panel"));
+const viewerReady = startViewer();
+const inspection = mountInspectionContext(document, () => navigation.show("diagnostics"));
+const diagnostics = mountDiagnostics(document.querySelector("#diagnostics-panel"), undefined, async (item, trigger, fps) => {
+  const viewer = await viewerReady;
+  if (viewer) {
+    inspectCase(item, navigation, viewer);
+    inspection.show(item, fps, trigger);
+  }
+  else navigation.show("tracking");
+});
+const navigation = setupNavigation(document, {
+  openDiagnostics: () => diagnostics.open(),
+  leaveTracking: () => document.querySelector("#source-video").pause(),
+  openExperiments: () => experiments.open(),
+});

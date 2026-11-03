@@ -1,0 +1,13 @@
+{
+  "spell_f1_mean": 1.0,
+  "macro_f1": 1.0,
+  "per_class": {"D": {"precision": 1.0, "recall": 1.0, "f1": 1.0, "support": 1}},
+  "transitions": {"12": {"f1": 1.0}, "25": {"f1": 1.0}},
+  "fragmentation": 1.0,
+  "n_pred_spells": 2,
+  "n_gt_spells": 2,
+  "mean_spell_duration_s": 0.06,
+  "n_abstain_on_graded": 0,
+  "n_frames": 4,
+  "n_graded": 4
+}

@@ -43,6 +43,7 @@
  * @property {HTMLInputElement} birdseyeLabels
  * @property {HTMLInputElement} birdseyeOverlay
  * @property {HTMLInputElement} overlay
+ * @property {() => boolean} [isActive] Whether viewer keyboard shortcuts are enabled.
  * @property {Document} keyboardTarget
  *
  * @typedef {Object} ViewerDependencies

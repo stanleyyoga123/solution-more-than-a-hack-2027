@@ -39,7 +39,11 @@ src/
 - Pipelines must not import, call, or automatically execute other pipelines. Shared code belongs in `src/utilities/`, with descriptive modules grouped by responsibility.
 - Keep helpers used by only one pipeline inside that pipeline. Do not create abstractions for hypothetical reuse.
 - Local production imports must stay inside `src/`; do not depend on root-level `utilities/`, `explorations/`, or `games.py`.
-- The local tracking viewer is the explicit exception: keep its server and browser
+- Offline diagnostic report generation is an explicit exception: keep it in
+  `src/diagnostics/`, runnable with `python -m src.diagnostics`. It consumes
+  existing artifacts and may reuse `src/utilities/`, but must not import or run
+  pipeline steps. Keep its tests under `tests/src/diagnostics/`.
+- The local tracking viewer is another explicit exception: keep its server and browser
   code in `frontend/`. It may reuse `src/utilities/` but must not run or import
   pipeline steps. Keep browser rendering, playback, and data access modular.
 - Pass input paths explicitly and write generated artifacts under `output/` by default. Preserve the distinction between tactical and broadcast timelines.
