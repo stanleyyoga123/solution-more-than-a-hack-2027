@@ -55,6 +55,10 @@ overwritten, so use a fresh `--output-dir` for a rerun.
 See the [pipeline index](src/pipelines/README.md) for links to each step’s
 README, including commands, schemas, parameters and interpretation.
 
+Use the [experiment registry](experiments/README.md) to record existing possession
+submissions, provenance and official scores in Git, then generate a shared
+comparison report without rerunning pipelines.
+
 ### Pipeline dependencies
 
 Arrows show files consumed or produced; run each pipeline separately. The two
@@ -187,6 +191,10 @@ Open [http://127.0.0.1:8765](http://127.0.0.1:8765). See the
 [frontend guide](frontend/README.md) for optional videos and quality reports,
 custom paths, ports and playback controls.
 
+Use the **Experiments** tab to compare recorded possession-inference runs directly
+from the Git experiment registry, inspect provenance, and explore cross-pipeline
+scores and fragmentation with optional evaluation-scope filtering. See the [dashboard guide](frontend/README.md#experiment-comparison).
+
 ## Data conventions
 
 - `frame` is the zero-based source-video frame.
@@ -227,3 +235,8 @@ node --test tests/frontend/web/*.test.mjs
 ```
 
 Video tests need FFmpeg, and HTTP tests need permission to bind local ports.
+
+The **Data & Diagnostics** tab adds public-window player–ball geometry, Smart Tagging
+evidence and searchable failure intervals with jumps into the existing viewer.
+Generate its report offline; see the [diagnostics guide](src/diagnostics/README.md)
+and [dashboard interpretation](frontend/README.md#data--diagnostics).

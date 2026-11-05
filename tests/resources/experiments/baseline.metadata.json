@@ -1,0 +1,8 @@
+{
+  "method": "nearest tracked player to the ball, centred majority vote",
+  "window_frames": 0,
+  "frame_count": 4,
+  "ball_located_frames": 3,
+  "label_counts": {"H": 2, "A": 1, "D": 1},
+  "teams": {"H": "Synthetic Home", "A": "Synthetic Away"}
+}

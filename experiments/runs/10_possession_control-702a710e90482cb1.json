@@ -1,0 +1,130 @@
+{
+  "artifacts": {
+    "metadata": {
+      "path": "output/possession-10/submission.metadata.json",
+      "sha256": "7c76a0e6c6cb89d6064581a87101854129ab9bf6ccb39a79d76dfb7ec9a36fef"
+    },
+    "scores": {
+      "path": "output/possession-10/submission.scores.json",
+      "sha256": "4bbf68682773e108d61303f46942dbe9d871b3a966b4704c98f16fb95dea8d78"
+    },
+    "submission": {
+      "path": "output/possession-10/submission.csv",
+      "sha256": "dac6c7e5de717f549fea2d8b494dd95ec07c2c9895acf54a2088ff2792daec85"
+    }
+  },
+  "evaluation": {
+    "dataset_id": null,
+    "ground_truth": {
+      "id": null,
+      "sha256": null
+    },
+    "implementation": {
+      "id": null,
+      "sha256": null,
+      "version": null
+    },
+    "metrics": {
+      "abstention_count": 0,
+      "dead_ball_f1": 0.385295486272685,
+      "fragmentation": 1.1904761904761905,
+      "graded_frame_count": 7500,
+      "ground_truth_possession_count": 17,
+      "macro_f1": 0.6478792132862479,
+      "mean_possession_duration_s": 13.64,
+      "predicted_possession_count": 20,
+      "spell_f1_mean": 0.36756756756756753,
+      "transition_f1": {
+        "12": 0.13636363636363635,
+        "25": 0.1818181818181818
+      }
+    },
+    "scope": "unknown",
+    "statistics_scope": "ground_truth_graded_frames"
+  },
+  "experiment": {
+    "description": "Imported local Pipeline 10 result",
+    "hypothesis": null,
+    "notes": "Historical execution commit, evaluation dataset/scope, ground truth and evaluator version are unverified.",
+    "recorded_at_utc": "2026-10-30T11:04:43.019429+00:00"
+  },
+  "fingerprint": "702a710e90482cb1ad6b863fe1693eeb9584517c0cce902d4de3054425bbe4f0",
+  "identity": {
+    "configuration": {
+      "control_advantage_m": 0.5,
+      "control_ball_speed_mps": 12,
+      "control_confirmation_seconds": 0.4,
+      "control_distance_m": 2,
+      "control_missing_timeout_seconds": 2
+    },
+    "evaluation": {
+      "dataset_id": null,
+      "ground_truth": {
+        "id": null,
+        "sha256": null
+      },
+      "implementation": {
+        "id": null,
+        "sha256": null,
+        "version": null
+      },
+      "scope": "unknown"
+    },
+    "pipeline": "10_possession_control",
+    "recording_git_commit": "62517d1d03e82224f1298f826c783a41248b4e47",
+    "recording_id": "BAR-ATH_tactical",
+    "strategy": "standalone_control_confirmation",
+    "strategy_version": 1,
+    "submission_sha256": "dac6c7e5de717f549fea2d8b494dd95ec07c2c9895acf54a2088ff2792daec85"
+  },
+  "prediction_statistics": {
+    "abstention_count": null,
+    "frame_count": 199319,
+    "label_counts": {
+      "A": 51692,
+      "D": 78570,
+      "H": 69057
+    },
+    "mean_possession_duration_s": null,
+    "predicted_possession_count": null,
+    "scope": "full_submission"
+  },
+  "provenance": {
+    "artifact_association": "caller_supplied_not_verified_by_scorer",
+    "execution": {
+      "elapsed_seconds": 6.138668008003151,
+      "git_commit": null,
+      "git_dirty": null,
+      "lockfile_sha256": null,
+      "runtime": {
+        "numpy_version": "2.5.4",
+        "python_version": "3.12.14"
+      },
+      "started_at_utc": "2026-10-30T09:19:37.633578+00:00"
+    },
+    "input_fingerprint_scope": "files_available_at_recording_time",
+    "inputs": {
+      "metadata": {
+        "path": "data/tactical/BAR-ATH_tactical_atd.xml",
+        "sha256": "327e35e32e46a647389b88f883d4f9a2ab931e3e6148aef2fcf8f22b1e93c43a"
+      },
+      "tracking": {
+        "path": "data/tactical/BAR-ATH_tactical_atd.txt",
+        "sha256": "f130e350d2bfdf734b7e32f072931fccc6d015c1e837d082064875fe0a700431"
+      }
+    },
+    "recording": {
+      "git_commit": "62517d1d03e82224f1298f826c783a41248b4e47",
+      "git_dirty": true,
+      "lockfile_sha256": "a467642be34ffb2dc4f4c655748ee511ccf9664b2f8469cad6c7ae2e218651b0",
+      "runtime": {
+        "numpy_version": "2.5.4",
+        "pandas_version": "3.0.6",
+        "python_version": "3.12.14",
+        "tqdm_version": "4.70.1"
+      }
+    }
+  },
+  "run_id": "10_possession_control-702a710e90482cb1",
+  "schema_version": 1
+}
