@@ -48,7 +48,7 @@
     "notes": null,
     "recorded_at_utc": "2026-11-03T10:38:20.092375+00:00"
   },
-  "fingerprint": "d352a16610d3e8140996943b1ac754417bc41b50e1dd3124ad9210fd3d95a78d",
+  "fingerprint": "6ed01249717cc4625bdaeca8aa79b0624c535d55849b6fea78af4629b5701538",
   "identity": {
     "configuration": {
       "activity_window_seconds": 3,
@@ -90,7 +90,7 @@
       },
       "scope": "unknown"
     },
-    "pipeline": null,
+    "pipeline": "12_possession_touch",
     "recording_git_commit": "a1d4b276d127b8f6bd2e70d504aaf2034eba029b",
     "recording_id": null,
     "strategy": "touch_ownership_with_dead_ball_detection",
@@ -150,6 +150,6 @@
       }
     }
   },
-  "run_id": "unknown-d352a16610d3e814",
+  "run_id": "12_possession_touch-6ed01249717cc462",
   "schema_version": 1
 }
