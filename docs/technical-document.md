@@ -1,170 +1,233 @@
 # Technical document: possession labelling for Barcelona vs Athletic Club
 
-Team: No Hala Madrid
+Team: NO HALA MADRID
 
 ## Summary
 
-The submission labels each of the 199,319 tactical-video frames `H`, `A`, `D` or
-`X`. It uses only the tracking data, the match metadata and the set-piece tags.
-Possession comes from which team's players touch the ball and whether they keep it
-or pass it on. Stoppages come from slow player movement, a ball beyond the lines
-and set-piece tags. The method is deterministic, has no training step, and runs
-in about 5 seconds. It is implemented in `src/pipelines/12_possession_touch`.
+The submission uses pipeline 11, `src/pipelines/11_possession_deadball`, to label
+all 199,319 tactical-video frames as home possession (`H`), away possession (`A`),
+dead ball (`D`) or outside the graded halves (`X`). Barcelona is the home team.
+The method combines nearest-player proximity, sustained control and a separate
+stoppage detector. It holds ownership through loose balls and missing tracking,
+and changes the owner only after sustained evidence for the opposing team.
 
-## Assets used and dropped
+This is a deterministic rule-based algorithm with no training step. It uses raw
+tactical tracking, EPTS metadata and automatic set-piece tags. The submission run
+on 15 November 2026 took approximately 8 seconds on the local machine.
 
-| Asset | Used | How or why not |
-| --- | --- | --- |
-| Tactical ATD (`BAR-ATH_tactical_atd.txt`) | Yes | Player and ball positions give touches, player speed and the ball's position relative to the lines. |
-| EPTS metadata (`BAR-ATH_tactical_atd.xml`) | Yes | Frame rate, pitch size (105 × 68 m), slot-to-team mapping and frame count. |
-| Smart Tagging (`BAR-ATH_tactical_smart_tagging.xml`) | Partly | Only the `SET PIECES` intervals, as a stoppage cue. The team tags and the other phases are not used, because phases are not possessions. |
-| Tactical video, homography | No | The ATD is already in pitch coordinates, so neither is needed. |
-| Broadcast video, ATD, homography | No | No mapping to the tactical frames is provided. |
+## Assets and training data
 
-No hand-labelled data is used. The public 5 minutes of ground truth is used to
-score and sanity-check the pipeline. The private ground truth is not used.
+| Asset | Use |
+| --- | --- |
+| Tactical ATD (`BAR-ATH_tactical_atd.txt`) | Player and ball positions provide team distances, ball speed, player activity and evidence that the ball is outside the pitch. |
+| EPTS metadata (`BAR-ATH_tactical_atd.xml`) | Provides frame rate (25 fps), pitch dimensions (105 × 68 m), slot-to-team mapping and frame count. |
+| Smart Tagging (`BAR-ATH_tactical_smart_tagging.xml`) | Only automatic `SET PIECES` intervals are used, as a stoppage cue. Tag team labels and other phases are not used. |
+| Tactical video and homography | Not inputs to pipeline 11; tracking coordinates already describe positions on the pitch. |
+| Broadcast video, tracking and homography | Not inputs; the submission uses the tactical timeline. |
 
-Earlier attempts live in the repository as steps 05, 09, 10 and 11: a
-nearest-player baseline, a continuity model, a control-confirmation model and a
-model with dead-ball detection. A soft-evidence two-state model was tried and
-dropped, because its score moved between 0.29 and 0.53 with its own settings.
-Steps 07 and 08 measure tracking quality and are not inputs to the submission.
+No labelled dataset is used to train this algorithm. The organisers' public
+five-minute ground truth is used for evaluation; it is not read by inference.
+The private ground truth is not used. The numeric settings are fixed in
+`configuration/policy.py`; the pipeline README describes the speed thresholds as
+physical round-number choices, not validated estimates.
+
+Other approaches remain in the repository, including nearest-player baseline
+(step 05), continuity (step 09), control confirmation (step 10) and touch-based
+ownership (step 12). The submitted CSV comes from step 11. No other pipeline is
+called or imported by it. Tracking-quality diagnostics in steps 07 and 08 are
+also not inputs.
 
 ## Approach
 
-### Timeline
+### Tracking and timeline
 
-The graded halves are frames 11185 to 90651 and 110808 to 190197. Frames outside
-them are `X`. The second half is graded from 110808 but kicks off at 113742, so
-frames 110808 to 113741 are `D`. Ownership restarts at each kick-off.
+The reader converts each ATD frame ID to a zero-based index by subtracting one.
+It converts normalised x/y coordinates to metres using the metadata pitch size.
+Each output row corresponds to a tactical-video frame.
 
-### Possession
+The configured graded halves are frames 11185–90651 and 110808–190197,
+inclusive. Frames outside these intervals are `X`. The second half kicks off at
+113742, so frames 110808–113741 are `D`. Ownership starts afresh at each
+kick-off; it does not carry across halftime.
 
-A frame is a touch when the nearest tracked player is within 1.5 m of the ball.
-Touches by the same team less than 1 s apart form one contact, so a short gap in
-the ball track does not end it.
+### Team ownership
 
-The team of the first contact in a half owns the ball. The other team takes
-possession when one of its contacts either:
+For each frame, the algorithm finds the nearest observed player from each team
+to the ball. A team is a control candidate when:
 
-- lasts at least 1.5 s, because the player keeps the ball, or
-- is followed by another touch from the same team within 3 s, because it
-  completed a pass.
+- its nearest player is within 2 m of the ball;
+- that player is at least 0.5 m closer than the opposing team's nearest player;
+- the ball's measured speed is at most 12 m/s, or its speed is unavailable.
 
-The change is dated to the first frame of that contact. Any other contact is a
-touch without control and changes nothing. Ownership holds through any gap in
-the ball track.
+Ball speed is displacement between consecutive observed frames multiplied by
+frame rate. A missing speed does not veto an otherwise valid candidate. If the
+opposing team has no observed distance, its distance is treated as infinite.
 
-### Stoppages
+At the start of each half, the first frame with an observed ball and a player
+initialises ownership to the nearest player's team. This initial choice does
+not require the control thresholds. Before that observation, the output is `D`.
+Equal nearest-player distances are resolved by tracking slot order.
 
-Frames inside a stoppage are `D`. A stoppage is a run of at least 3 s that comes
-from any of these cues:
+Once an owner exists, the opposing team must be a control candidate for 0.4 s
+(10 consecutive frames at 25 fps) to take ownership. Confirmation backdates the
+change to the first frame of that run. An interruption resets the pending
+confirmation. Otherwise, the incumbent retains ownership, including through
+arbitrarily long gaps in the ball track.
 
-- The mean speed of all tracked players, averaged over 3 s, is below 1.1 m/s. The
-  stoppage lasts until that speed rises above 1.6 m/s.
-- The ball is more than 0.5 m beyond the pitch lines for most of a 0.4 s window.
-- The frame is inside a `SET PIECES` tag, starting 1 s early, and the 3 s player
-  speed is below 1.6 m/s.
+This separates proximity from a confirmed change of possession: a brief
+challenge does not automatically transfer ownership, and losing sight of the
+ball does not automatically end it.
 
-## Missing and noisy tracking
+### Dead-ball detection
 
-- The ball is missing on 41% of graded frames. Missing frames are never touches.
-  Contacts bridge gaps of up to 1 s, and ownership holds through longer gaps.
-- Tracking slots are not players. Slots appear, vanish and swap identity, so the
-  method uses only team membership and distances, never a persistent player.
-- A step faster than 12 m/s between consecutive frames is an identity switch. It
-  is left out of the player speed.
-- Unknown player speed never starts a stoppage. A frame missing from the source
-  leaves its speed unknown.
-- Positions are used as given, with no interpolation. Finite positions outside
-  the pitch are kept, because they are the evidence for a ball beyond the lines.
+The detector combines three cues:
+
+1. **Low player activity.** Per-frame activity is the mean speed of tracked
+   player slots between consecutive frames, excluding steps above 12 m/s. A
+   centred 3 s moving average smooths this signal. The low-activity state starts
+   below 1.1 m/s and persists until activity exceeds 1.6 m/s or is unknown.
+2. **Ball outside the pitch.** The ball is more than 0.5 m beyond a pitch
+   boundary in over half the frames of a centred 0.4 s window.
+3. **Set-piece interval.** The frame lies in an automatic `SET PIECES` interval,
+   extended 1 s earlier, and smoothed player activity is below 1.6 m/s.
+
+The activity average requires at least 15 observed activity samples in its
+75-frame window. Set-piece timestamps are converted from seconds to frames by
+rounding; interval ends are exclusive.
+
+The three masks are combined, then contiguous detected runs shorter than 3 s
+(75 frames) are removed. Thus the minimum duration applies to the combined
+mask, not to each cue independently. Within the post-kick-off graded timeline,
+a retained stoppage overrides the ownership label with `D`.
+
+Ownership inference continues beneath this mask. A stoppage does not reset the
+owner or assign the restart team from the tag. When the stoppage ends, the
+underlying ownership prediction becomes visible again.
+
+## Missing and noisy observations
+
+Missing ball or player positions cannot provide a control candidate. They reset
+an opposing team's pending confirmation but do not clear established ownership.
+Before any owner has been observed in a half, unavailable ownership is labelled
+`D`; consequently, not every `D` frame is a positively detected stoppage.
+
+No positions are interpolated. Finite off-pitch positions are retained for the
+boundary cue. Ball speed requires consecutive frames with observed ball
+positions. Player speeds also require consecutive frames; steps above 12 m/s
+are discarded as likely slot changes or tracking noise. Shorter slot changes
+can still affect the activity estimate. Unknown smoothed activity cannot start
+a low-activity or tag-based stoppage, although the boundary cue can still apply.
+
+Distances use team membership rather than a persistent player identity. Slot
+continuity is used only to estimate player movement between adjacent frames.
 
 ## Possession rules implemented
 
-- **Loose ball.** Possession stays with the last team that held it.
-- **Challenge, deflection, aerial duel.** A single touch by the other team does
-  not change possession. It changes only if that team keeps the ball for 1.5 s or
-  touches it again within 3 s.
-- **Restart.** The first team to touch the ball after kick-off owns it until the
-  other team takes possession by the rule above. After other stoppages the previous owner keeps the
-  ball until the other team takes it, so a restart by the other team is picked up
-  by its first held or passed contact. The set-piece tag's team is not used.
-- **Dead ball.** `D` is a detected stoppage. No owner is named for it.
+- **Loose ball or missing ball.** Keep the incumbent owner until the opposition
+  satisfies the confirmation rule.
+- **Challenge, deflection or aerial duel.** Transfer ownership only after 10
+  consecutive qualifying control frames. Ball speeds above 12 m/s prevent a
+  candidate when speed is observed.
+- **Kick-off.** Initialise from the nearest observed player's team independently
+  in each half.
+- **Other restarts.** Retain the underlying ownership state, allowing confirmed
+  switches during a stoppage. Do not use the set-piece tag's team.
+- **Dead ball.** Display `D` over detected stoppages and the configured second-half
+  pre-kick-off interval, as well as frames awaiting initial ownership.
 
-## Results and how far to trust them
+## Evaluation
 
-On the public 5 minutes (17 possessions), scored with the official metrics:
+The exact submission CSV was scored against the organisers' public ground truth
+with pipeline 06 on 15 November 2026. This covers 7,500 graded frames (five
+minutes) and 17 reference possessions.
 
-| Step | spellF1 | macroF1 | Possessions predicted |
-| --- | --- | --- | --- |
-| 05 nearest-player baseline | 0.3256 | 0.6207 | 26 |
-| 09 continuity | 0.0441 | 0.4575 | 128 |
-| 10 control confirmation | 0.3676 | 0.6479 | 20 |
-| 11 ownership with dead ball | 0.4343 | 0.7775 | 18 |
-| **12 touch ownership (submitted)** | **0.5333** | **0.8066** | **13** |
+| Measure | Pipeline 11 |
+| --- | ---: |
+| spellF1 | 0.4343 |
+| macroF1 | 0.7775 |
+| Predicted possessions in the public window | 18 |
+| Reference possessions in the public window | 17 |
 
-Seventeen possessions cannot rank methods. The bootstrap range for spellF1 is
-0.29 to 0.58 for step 11 and 0.35 to 0.71 for step 12, so the ranges overlap.
-Three checks make the improvement more likely to be real:
+The organiser's format validator also accepted the exact team-named CSV. Across
+that file, it reports 394 possessions averaging 9.3 s, treating `X` as a gap.
+These whole-file statistics describe the predictions, not their accuracy.
 
-- Across 27 settings of touch distance, held-ball time and pass window, every one
-  scored above step 11 on the public window.
-- Over the whole match, step 12 predicts 272 possessions with a mean of 13.4 s.
-  Step 11 predicts 394 with a mean of 9.3 s. The public ground truth has a mean of
-  14.2 s.
-- Where an automatic Smart Tagging phase names the team in possession, step 12
-  agrees on 79.0% of frames and step 11 on 76.7%. Those tags come from the same
-  tracking, so this checks consistency, not accuracy.
-
-The settings come from the rule text and a sweep on the 17 public possessions.
-The held-ball time matters most. Values of 1 s to 2 s score the same, and 3 s or
-more falls to about the step 11 score.
+The public window is too small to establish whole-match accuracy. Format
+validation establishes that the file can be scored; it does not validate the
+possession decisions or the stoppage thresholds.
 
 ## Limitations
 
-- A handover without a touch of 1.5 s or a second touch within 3 s is missed.
-  The method predicts 13 possessions on the public window where the ground truth
-  has 17, and it merges two short true possessions into their neighbours.
-- A touch needs the ball in the tracking. A real handover can leave no touch.
-- Slow live play, such as a goalkeeper holding the ball, can be marked `D`. A dead
-  ball while players still move quickly is missed.
-- The timeline constants (kick-off and graded-half frames) are specific to this
-  match. All other values are in `configuration/policy.py`.
-- The dating of changes uses the future, so the output is an offline result.
-- With more time: validate on more labelled minutes, use ball speed and direction
-  to separate a deflection from a pass, and use the restart tag's team.
+- Proximity is a proxy for control. A nearby player may not actually control the
+  ball, and the initial owner does not have to pass a distance threshold.
+- A genuine turnover may be missed if ball tracking is absent or the opposition
+  never supplies 10 consecutive qualifying frames. The previous owner can then
+  persist too long.
+- Unknown ball speed is allowed, which avoids rejecting intermittent tracking
+  but can admit a control candidate during fast ball movement.
+- Slow live play, such as a goalkeeper holding the ball, can be marked `D`.
+  Stoppages with moving players can be missed, and detected runs shorter than
+  3 s are discarded.
+- Ownership can change during a detected stoppage because the two inference
+  stages run independently. Restart ownership is not explicitly modelled.
+- Kick-off and graded-half constants are specific to this match. Centred windows
+  and backdated changes use future observations, so this is an offline method.
+- Further work would evaluate the rules on independent labelled matches and
+  improve turnover and restart inference when ball observations are sparse.
 
-## Reproduction
+## Reproduction and submission
 
-Python 3.12 and [uv](https://docs.astral.sh/uv/) are required. Dependencies are
-pinned in `uv.lock`. Place the organisers' tactical files under `data/tactical/`.
+Use Python 3.12 and the dependencies pinned in `uv.lock`. Place the organisers'
+three tactical input files under `data/tactical/`. From the repository root:
 
 ```bash
 uv sync --frozen
 source .venv/bin/activate
 
-python -m src.pipelines.12_possession_touch \
+python -m src.pipelines.11_possession_deadball \
   --tracking data/tactical/BAR-ATH_tactical_atd.txt \
   --metadata data/tactical/BAR-ATH_tactical_atd.xml \
   --smart-tagging data/tactical/BAR-ATH_tactical_smart_tagging.xml \
-  --output-dir output/submission
+  --output-dir output/submission-pipeline11
+
+cp -n output/submission-pipeline11/possession_deadball.csv \
+  'output/submission-pipeline11/NO HALA MADRID.csv'
 ```
 
-The run writes `output/submission/possession_touch.csv`, the submitted file, and a
-metadata JSON. It refuses to overwrite, so use a fresh directory. Two runs produce
-byte-identical CSVs. With pandas 3.0.6 and numpy 2.5.4 as locked, the file has this
-SHA-256:
+The pipeline writes `possession_deadball.csv` and
+`possession_deadball.metadata.json`. Existing pipeline outputs are refused, so
+use a fresh output directory for another run. The JSON records policy settings,
+input paths, runtime information and label counts; only the team-named CSV is
+uploaded in the possession-file field.
+
+The submission was produced with Python 3.12.14, NumPy 2.5.4 and pandas 3.0.6.
+The CSV has the header `frame,label`, followed by 199,319 rows numbered 0–199318:
+
+| Label | Rows |
+| --- | ---: |
+| H | 53,050 |
+| A | 38,186 |
+| D | 67,621 |
+| X | 40,462 |
+
+The submission run and the earlier stored pipeline 11 CSV are byte-identical.
+The SHA-256 of `NO HALA MADRID.csv` is:
 
 ```text
-c26870bcb1f1d62760e734b8e825af93aaf1a63e75dfd4c86b938e114f06e49e
+3b893cf7f843bbb271b5ccd19c45db83f9eb421f421285afe11ac730e38d7aee
 ```
 
-It has 199,319 rows with 53,750 `H`, 37,486 `A`, 67,621 `D` and 40,462 `X`. The
-organisers' `validate_submission.py` accepts it. To score it on the public window:
+To reproduce the public-window evaluation separately:
 
 ```bash
 python -m src.pipelines.06_score_submission \
-  --submission output/submission/possession_touch.csv \
-  --ground-truth path/to/BAR-ATH_possession_gt_public.csv \
-  --output-dir output/submission
+  --submission 'output/submission-pipeline11/NO HALA MADRID.csv' \
+  --ground-truth data/BAR-ATH_possession_gt_public.csv \
+  --output-dir output/submission-pipeline11
 ```
+
+Run the organisers' `evaluation/validate_submission.py` from their repository
+against the exact CSV before uploading it. That validator is not included in
+this repository. Submit this document as `NO HALA MADRID.md` alongside the CSV
+and the public code repository URL. Match assets and generated exports must
+remain outside the public repository.
